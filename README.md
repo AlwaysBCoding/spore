@@ -2,7 +2,10 @@
 
 A Clojure framework for building web applications
 
-## License
+### Version Information
+[![Clojars Project](http://clojars.org/alwaysbcoding/spore/latest-version.svg)](http://clojars.org/alwaysbcoding/spore)
+
+### License
 
 Copyright © 2015 FIXME
 
