@@ -3,11 +3,15 @@
   :url "https://github.com/AlwaysBCoding/spore"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.7.0"]]
+  :dependencies [[org.clojure/clojure "1.7.0"]
+
+                 [camel-snake-kebab "0.3.2"]]
 
   :global-vars {*print-length* 25}
 
-  :min-lein-version "2.0.0")
+  :min-lein-version "2.0.0"
+
+  :source-paths ["src/spore"])
 
   ;  [org.apache.httpcomponents/httpclient "4.5"]
   ;  [com.datomic/datomic-pro "0.9.5130"]
