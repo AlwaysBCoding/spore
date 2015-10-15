@@ -1,9 +1,9 @@
-(defproject spore "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+(defproject alwaysbcoding/spore "0.1.0-SNAPSHOT"
+  :description "A Clojure framework for building web applications"
+  :url "https://github.com/AlwaysBCoding/spore"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.7.0"]
+  :dependencies [[org.clojure/clojure "1.7.0"]]
 
                 ;  [org.apache.httpcomponents/httpclient "4.5"]
                 ;  [com.datomic/datomic-pro "0.9.5130"]
