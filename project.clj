@@ -11,7 +11,7 @@
 
   :min-lein-version "2.0.0"
 
-  :source-paths ["src/spore"])
+  :source-paths ["src"])
 
   ;  [org.apache.httpcomponents/httpclient "4.5"]
   ;  [com.datomic/datomic-pro "0.9.5130"]

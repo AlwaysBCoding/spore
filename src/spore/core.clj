@@ -1,5 +1,4 @@
 (ns spore.core)
 
-(defn test-fn
-  []
+(defn test-fn []
   "Test Output")
