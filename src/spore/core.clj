@@ -11,4 +11,4 @@
      (class-protocol/schema [self#] (class-implementation/schema self#))
 
      (class-protocol/query [self# query-fn#] (class-protocol/query self# query-fn# {}))
-     (class-protocol/query [self# query-fn# options#] (class-implementation/query self# query-fn# options#)))
+     (class-protocol/query [self# query-fn# options#] (class-implementation/query self# query-fn# options#))))
