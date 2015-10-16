@@ -8,11 +8,17 @@ A Clojure framework for building web applications
 # Docs
 
 ### Artifacts
+Config
+
 Model
 Query
 Serializer
 Scope
 Data
+
+### Config Spec
+(def default-db-uri "...")
+A string that represents the Datomic URI of the default database... (i.e. (.all Team)) would reach to this database. A model can be configured with a db-uri, but if not this is the fallback
 
 ### Manifest Spec
 
