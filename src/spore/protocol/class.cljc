@@ -6,10 +6,10 @@
   (ident [self])
   (schema [self])
 
-  ; (data [self data-fn] [self data-fn options])
+  (data [self data-fn] [self data-fn options])
   (query [self query-fn] [self query-fn options])
-  ;
-  ; (all [self] [self options])
+
+  (all [self] [self options])
   ; (one [self] [self options])
   ; (where [self params] [self params options])
   ; (detect [self params] [self params options])

@@ -13,18 +13,19 @@
   ([self]
     (resource-helpers/manifest->schema (.manifest self))))
 
-; (defn data
-;   ([self data-fn] (data self data-fn {}))
-;   ([self data-fn options] "..."))
-;
+(defn data
+  ([self data-fn options]
+    (let [invokable-data-fn (resolve (symbol (str "spore.data." (resource-helpers/resource-ident->resource-namespace (.ident self))) (str (name data-fn))))]
+      (invokable-data-fn options))))
+
 (defn query
   ([self query-fn options]
     (let [invokable-query-fn (resolve (symbol (str "spore.query." (resource-helpers/resource-ident->resource-namespace (.ident self))) (str (name query-fn))))]
       (invokable-query-fn options))))
-;
-; (defn all
-;   ([self] (all self {}))
-;   ([self options] "..."))
+
+(defn all
+  ([self options]
+    (var-get (resolve (symbol "spore.config/default-db-uri")))))
 ;
 ; (defn one
 ;   ([self] (one self {}))
