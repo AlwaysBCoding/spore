@@ -1,5 +1,6 @@
 (ns spore.implementation.class
-  (:require [spore.helpers.resource :as resource-helpers]))
+  (:require [spore.helpers.resource :as resource-helpers]
+            [datomic.api :as d]))
 
 (defn manifest
   ([self manifest]
@@ -24,8 +25,18 @@
       (invokable-query-fn options))))
 
 (defn all
-  ([self options]
-    (var-get (resolve (symbol "spore.config/default-db-uri")))))
+  ([self {:keys [return] :or {return :records} :as options}]
+    (let [db-uri (var-get (resolve (symbol "spore.config/default-db-uri")))
+          db (d/db (d/connect db-uri))
+          ids (d/q '[:find [?eid ...]
+                     :in $ ?attribute
+                     :where
+                     [?eid ?attribute ?sporeID]]
+                db (resource-helpers/resource-attribute (.ident self)))]
+      (condp = return
+        :ids ids
+        :entities (map #(d/entity db %) ids)
+        :records (map #(d/entity db %) ids)))))
 ;
 ; (defn one
 ;   ([self] (one self {}))

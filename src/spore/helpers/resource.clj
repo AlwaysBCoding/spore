@@ -3,9 +3,7 @@
             [camel-snake-kebab.core :refer :all]))
 
 (defn resource-attribute
-  ([ident]
-   (resource-attribute ident :uuid))
-
+  ([ident] (resource-attribute ident :sporeID))
   ([ident attr]
    (keyword (str (name (->camelCase ident)) "/" (name attr)))))
 
@@ -54,25 +52,33 @@
 
 (defn manifest->schema [manifest]
   (vec
-   (for [[entity-ns entity-attrs] manifest
-         [attr properties] entity-attrs]
-     (let [{:keys [type cardinality unique index component]} properties]
-       (merge
-        {:db/id (d/tempid :db.part/db)
-         :db/ident (keyword (str (name entity-ns)
-                                 "/"
-                                 (name attr)))
-         :db/valueType (keyword->schema-key :type
-                                            type)
-         :db/cardinality (or (keyword->schema-key :cardinality
-                                                  cardinality)
-                             :db.cardinality/one)
+   (conj
+     (for [[entity-ns entity-attrs] manifest
+           [attr properties] entity-attrs]
+       (let [{:keys [type cardinality unique index component]} properties]
+         (merge
+          {:db/id (d/tempid :db.part/db)
+           :db/ident (keyword (str (name entity-ns)
+                                   "/"
+                                   (name attr)))
+           :db/valueType (keyword->schema-key :type
+                                              type)
+           :db/cardinality (or (keyword->schema-key :cardinality
+                                                    cardinality)
+                               :db.cardinality/one)
 
-         :db/isComponent (or (keyword->schema-key :component component)
-                             false)
+           :db/isComponent (or (keyword->schema-key :component component)
+                               false)
 
-         :db.install/_attribute :db.part/db}
+           :db.install/_attribute :db.part/db}
 
-        (when unique {:db/unique (keyword->schema-key :unique
-                                                      unique)})
-        (when index {:db/index true}))))))
+          (when unique {:db/unique (keyword->schema-key :unique
+                                                        unique)})
+          (when index {:db/index true}))))
+     {:db/id (d/tempid :db.part/db)
+      :db/ident (keyword (str (name (first (keys manifest))) "/sporeID"))
+      :db/valueType :db.type/uuid
+      :db/cardinality :db.cardinality/one
+      :db/unique :db.unique/identity
+      :db/isComponent false
+      :db.install/_attribute :db.part/db})))
