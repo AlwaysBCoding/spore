@@ -2,9 +2,6 @@
   (:require [datomic.api :as d]
             [camel-snake-kebab.core :refer :all]))
 
-(def default-db-uri
-  (:db-uri (read-string (slurp "config.edn"))))
-
 (defn resource-attribute
   ([ident]
    (resource-attribute ident :uuid))
