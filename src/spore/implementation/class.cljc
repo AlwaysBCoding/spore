@@ -17,9 +17,10 @@
 ;   ([self data-fn] (data self data-fn {}))
 ;   ([self data-fn options] "..."))
 ;
-; (defn query
-;   ([self query-fn] (query self query-fn {}))
-;   ([self query-fn options] "..."))
+(defn query
+  ([self query-fn options]
+    (let [invokable-query-fn (resolve (symbol (str "spore.query." (resource-helpers/resource-ident->resource-namespace (.ident self))) (str (name query-fn))))]
+      (invokable-query-fn options))))
 ;
 ; (defn all
 ;   ([self] (all self {}))

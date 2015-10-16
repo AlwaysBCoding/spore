@@ -8,4 +8,7 @@
 
      (class-protocol/manifest [self#] (class-implementation/manifest self# ~manifest))
      (class-protocol/ident [self#] (class-implementation/ident self#))
-     (class-protocol/schema [self#] (class-implementation/schema self#))))
+     (class-protocol/schema [self#] (class-implementation/schema self#))
+
+     (class-protocol/query [self# query-fn#] (class-protocol/query self# query-fn# {}))
+     (class-protocol/query [self# query-fn# options#] (class-implementation/query self# query-fn# options#)))
