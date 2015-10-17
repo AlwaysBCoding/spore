@@ -16,5 +16,8 @@
      (class-protocol/query [self# query-fn#] (class-protocol/query self# query-fn# {}))
      (class-protocol/query [self# query-fn# options#] (class-implementation/query self# query-fn# options#))
 
+     (class-protocol/build [self# params#] (class-protocol/build self# params# {}))
+     (class-protocol/build [self# params# options#] (class-implementation/build self# params# options#))
+
      (class-protocol/all [self#] (class-protocol/all self# {}))
      (class-protocol/all [self# options#] (class-implementation/all self# options#))))

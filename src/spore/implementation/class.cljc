@@ -24,6 +24,27 @@
     (let [invokable-query-fn (resolve (symbol (str "spore.query." (resource-helpers/resource-ident->resource-namespace (.ident self))) (str (name query-fn))))]
       (invokable-query-fn options))))
 
+(defn ^:private validate-build-parameter [manifest key value]
+  (.contains (keys (first (vals manifest))) key))
+
+(defn build
+  ([self params {:keys [] :or {} :as options}]
+    (let [tempid (d/tempid :db.part/user)
+          tx-fragment (reduce-kv
+                       (fn [memo key value]
+                         (if (validate-build-parameter (.manifest self) key value)
+                           (assoc memo (resource-helpers/resource-attribute (.ident self) key) value)
+                           (throw (ex-info
+                                   "Attempted to call build with a parameter that is not defined on the manifest"
+                                   {:model (.ident self)
+                                    :parameter key}))))
+                       {} params)
+          built-record (merge
+                         {:db/id tempid
+                          (resource-helpers/resource-attribute (.ident self) :sporeID) (d/squuid)}
+                         tx-fragment)]
+      built-record)))
+
 (defn all
   ([self {:keys [return] :or {return :records} :as options}]
     (let [db-uri (var-get (resolve (symbol "spore.config/default-db-uri")))
@@ -62,9 +83,6 @@
 ;   ([self params] (destroy-where self params {}))
 ;   ([self params options] "..."))
 ;
-; (defn build
-;   ([self params] (build self params {}))
-;   ([self params options] "..."))
 ;
 ; (defn create
 ;   ([self params] (create self params {}))

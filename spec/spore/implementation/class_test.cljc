@@ -1,5 +1,6 @@
 (ns spore.imeplementation.class-test
   (:require [clojure.test :refer :all]
+            [spec.helpers.matchers :refer :all]
             [spore.core :as spore]
             [datomic.api :as d]))
 
@@ -42,9 +43,7 @@
     (let [Player (->Player)
           PlayerGame (->PlayerGame)
           BasketballGameEvent (->BasketballGameEvent)]
-      (is (= (.manifest Player) player-manifest))
-      (is (= (.manifest PlayerGame) player-game-manifest))
-      (is (= (.manifest BasketballGameEvent) basketball-game-event-manifest)))))
+      (is (= (.manifest Player) player-manifest)))))
 
 (testing "#ident"
   (deftest returns-ident-single-word
@@ -59,7 +58,41 @@
     (let [BasketballGameEvent (->BasketballGameEvent)]
       (is (= (.ident BasketballGameEvent) :basketball.gameEvent)))))
 
-(testing "#schema")
+(testing "#schema"
+  (deftest adds-spore-id-to-schema
+    (let [Player (->Player)
+          schema (.schema Player)]
+      (is
+       (= 1
+          (->> schema
+               (filter #(contains-submap? % {:db/ident :player/sporeID
+                                             :db/valueType :db.type/uuid
+                                             :db/unique :db.unique/identity}))
+               (count)))))))
+
+(testing "#build"
+  (deftest builds-simple-record
+    (let [Player (->Player)
+          tx-data (.build Player {:firstname "John"
+                                  :lastname "Wall"})]
+      (is (= true
+             (contains-submap? tx-data {:player/firstname "John"
+                                        :player/lastname "Wall"})))
+
+      (is (= true
+             (contains-map-keys? tx-data [:player/sporeID])))))
+
+  (deftest raises-error-if-parameter-is-not-in-manifest
+    (let [Player (->Player)]
+      (try
+        (.build Player {:firstname "John"
+                        :middlename "Hildred"})
+        (catch Exception e
+          (is (= "Attempted to call build with a parameter that is not defined on the manifest"
+                 (.getMessage e)))
+          (is (= (ex-data e)
+                 {:model :player
+                  :parameter :middlename})))))))
 
 (testing "#all")
 

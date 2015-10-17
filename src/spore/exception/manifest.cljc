@@ -1,0 +1,1 @@
+(ns spore.exception.manifest)
