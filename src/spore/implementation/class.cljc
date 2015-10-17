@@ -38,7 +38,7 @@
                      tx-fragment)]
       tx-record)))
 
-(defn ^:private validate-params [self params]
+(defn ^:private validate-create-params [self params]
   (let [required-attributes (->> (first (vals (.manifest self)))
                                  (filter (fn [[key value]]
                                            (util/contains-submap? value {:required true})))
@@ -59,7 +59,7 @@
 
 (defn create
   ([self params {:keys [return] :or {return :record} :as options} db-uri]
-   (validate-params self params)
+   (validate-create-params self params)
    (let [connection (d/connect db-uri)
          tx-record (.build self params)
          tx-data (vector tx-record)
@@ -84,8 +84,18 @@
        :entities (map #(d/entity db %) ids)
        :records (map #(d/entity db %) ids)))))
 
+(defn ^:private validate-query-params [self params]
+    
+  (doseq [[key value] params]
+    (if-not (.contains (keys (first (vals (.manifest self)))) key)
+      (throw (ex-info
+              "Tried to build a query with a parameter that is not defined on the manifest"
+              {:model (.ident self)
+               :parameter key})))))
+
 (defn where
   ([self params {:keys [return] :or {return :records} :as options} db-uri]
+   (validate-query-params self params)
    (let [db (d/db (d/connect db-uri))
          name-fn (comp symbol (partial str "?") name)
          param-names (map name-fn (keys params))
@@ -103,22 +113,47 @@
        :entities (map #(d/entity db %) ids)
        :records (map #(d/entity db %) ids)))))
 
-;
-; (defn one
-;   ([self] (one self {}))
-;   ([self options] "..."))
-;
-; (defn where
-;   ([self params] (where self params {}))
-;   ([self params options] "..."))
-;
-; (defn detect
-;   ([self params] (detect self params {}))
-;   ([self params options] "..."))
-;
-; (defn lookup
-;   ([self params] (lookup self params {}))
-;   ([self params options] "..."))
+(defn detect
+  ([self params {:keys [return] :or {return :record} :as options} db-uri]
+   (validate-query-params self params)
+   (let [db (d/db (d/connect db-uri))
+         name-fn (comp symbol (partial str "?") name)
+         param-names (map name-fn (keys params))
+         param-vals (vals params)
+         attribute-names (map #(resource-helpers/resource-attribute (.ident self) %) (keys params))
+         where-clause (map #(vector '?eid %1 %2) attribute-names param-names)
+         in-clause (conj param-names '$)
+         final-clause (concat [:find '?eid '.]
+                              [:in] in-clause
+                              [:where] where-clause)
+         id (apply d/q final-clause db param-vals)]
+
+     (condp = return
+       :id id
+       :entity (d/entity db id)
+       :record (d/entity db id)))))
+
+(defn lookup
+  ([self id {:keys [] :or {} :as options} db-uri]
+   (let [db (d/db (d/connect db-uri))
+         entity (d/entity db id)]
+     (if-not (empty? (into [] entity))
+       entity
+       nil))))
+
+(defn one
+  ([self {:keys [return] :or {return :record} :as options} db-uri]
+   (let [db (d/db (d/connect db-uri))
+         id (d/q '[:find ?eid .
+                   :in $ ?attribute
+                   :where
+                   [?eid ?attribute ?sporeID]]
+                 db (resource-helpers/resource-attribute (.ident self)))]
+
+     (condp = return
+       :id id
+       :entity (d/entity db id)
+       :record (d/entity db id)))))
 ;
 ; (defn destroy-all
 ;   ([self] (destroy-all self {}))
@@ -127,9 +162,7 @@
 ; (defn destroy-where
 ;   ([self params] (destroy-where self params {}))
 ;   ([self params options] "..."))
-;
-;
-;
+
 ; (defn detect-or-create
 ;   ([self params] (detect-or-create self params {}))
 ;   ([self params options] "..."))

@@ -55,25 +55,25 @@
 
 ;; Assertions
 (testing "#manifest"
-  (deftest returns-manifest
+  (deftest manifest-returns-manifest
     (let [Player (->Player)]
       (is (= (.manifest Player) player-manifest)))))
 
 (testing "#ident"
-  (deftest returns-ident-single-word
+  (deftest ident-returns-ident-single-word
     (let [Player (->Player)]
       (is (= (.ident Player) :player))))
 
-  (deftest returns-ident-compound-word
+  (deftest ident-returns-ident-compound-word
     (let [PlayerGame (->PlayerGame)]
       (is (= (.ident PlayerGame) :playerGame))))
 
-  (deftest returns-ident-namespaced-word
+  (deftest ident-returns-ident-namespaced-word
     (let [BasketballGameEvent (->BasketballGameEvent)]
       (is (= (.ident BasketballGameEvent) :basketball.gameEvent)))))
 
 (testing "#schema"
-  (deftest adds-spore-id-to-schema
+  (deftest schema-adds-spore-id-to-schema
     (let [Player (->Player)]
       (is (= 1
              (->> (.schema Player)
@@ -83,7 +83,7 @@
                   (count)))))))
 
 (testing "#build"
-  (deftest builds-simple-record
+  (deftest build-builds-simple-record
     (let [Player (->Player)
           tx-data (.build Player {:firstname "John"
                                   :lastname "Wall"})]
@@ -95,19 +95,19 @@
              (contains-map-keys? tx-data [:player/sporeID]))))))
 
 (testing "#create"
-  (deftest transacts-record
+  (deftest create-transacts-record
     (let [Player (->Player)
           result (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)]
       (is (= java.lang.Long
              (.getClass (:db/id result))))))
 
-  (deftest can-return-id
+  (deftest create-can-return-id
     (let [Player (->Player)
           result (.create Player {:firstname "John" :lastname "Wall"} {:return :id} db-uri)]
       (is (= java.lang.Long
              (.getClass result)))))
 
-  (deftest raises-error-if-parameter-is-not-in-manifest
+  (deftest create-raises-error-if-parameter-is-not-in-manifest
     (let [Player (->Player)]
       (try
         (.create Player {:firstname "John"
@@ -119,7 +119,7 @@
                  {:model :player
                   :parameter :middlename}))))))
 
-  (deftest raises-error-if-required-field-is-not-present
+  (deftest create-raises-error-if-required-field-is-not-present
     (let [Player (->Player)]
       (try
         (.create Player {:firstname "John"} {} db-uri)
@@ -130,7 +130,7 @@
                   :required-attributes '(:lastname)})))))))
 
 (testing "#all"
-  (deftest returns-all-instances
+  (deftest all-returns-all-instances
     (let [Player (->Player)
           Team (->Team)]
       (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)
@@ -140,7 +140,7 @@
              (count (.all Player {} db-uri)))))))
 
 (testing "#where"
-  (deftest returns-all-instances-single-attribute
+  (deftest where-returns-all-instances-single-attribute
     (let [Player (->Player)]
       (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)
       (.create Player {:firstname "John" :lastname "Smith"} {} db-uri)
@@ -149,14 +149,73 @@
       (is (= 3
              (count (.where Player {:firstname "John"} {} db-uri))))))
 
-  (deftest returns-all-instances-compound-attribute
+  (deftest where-returns-all-instances-compound-attribute
     (let [Player (->Player)]
       (.create Player {:firstname "John" :lastname "Wall" :jerseyNumber 2} {} db-uri)
       (.create Player {:firstname "John" :lastname "Smith" :jerseyNumber 2} {} db-uri)
       (.create Player {:firstname "John" :lastname "Tyler" :jerseyNumber 15} {} db-uri)
       (.create Player {:firstname "Bradley" :lastname "Beal" :jerseyNumber 3} {} db-uri)
       (is (= 2
-             (count (.where Player {:firstname "John" :jerseyNumber 2} {} db-uri)))))))
+             (count (.where Player {:firstname "John" :jerseyNumber 2} {} db-uri))))))
+
+  (deftest where-raises-error-if-parameter-is-not-in-manifest
+    (let [Player (->Player)]
+      (.create Player {:firstname "John" :lastname "Wall" :jerseyNumber 2} {} db-uri)
+      (try
+        (.where Player {:firstname "John" :middlename "Hildred"} {} db-uri)
+        (throw (ex-info "" {:message "No exception thrown in function that is expected to error"}))
+        (catch Exception e
+          (is (= (ex-data e)
+                 {:model :player
+                  :parameter :middlename})))))))
+
+(testing "#detect"
+  (deftest detect-returns-instance-single-attribute
+    (let [Player (->Player)]
+      (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)
+      (.create Player {:firstname "Bradley" :lastname "Beal"} {} db-uri)
+      (is (= "John"
+             (:player/firstname (.detect Player {:lastname "Wall"} {} db-uri))))))
+
+  (deftest detect-returns-instance-compound-attribute
+    (let [Player (->Player)]
+      (.create Player {:firstname "John" :lastname "Wall" :jerseyNumber 2} {} db-uri)
+      (.create Player {:firstname "John" :lastname "Tyler" :jerseyNumber 15} {} db-uri)
+      (.create Player {:firstname "Bradley" :lastname "Beal" :jerseyNumber 3} {} db-uri)
+      (is (= "Wall"
+             (:player/lastname (.detect Player {:firstname "John" :jerseyNumber 2} {} db-uri))))))
+  
+  (deftest detect-raises-error-if-parameter-is-not-in-manifest
+    (let [Player (->Player)]
+      (.create Player {:firstname "John" :lastname "Wall" :jerseyNumber 2} {} db-uri)
+      (try
+        (.detect Player {:firstname "John" :middlename "Hildred"} {} db-uri)
+        (throw (ex-info "" {:message "No exception thrown in function that is expected to error"}))
+        (catch Exception e
+          (is (= (ex-data e)
+                 {:model :player
+                  :parameter :middlename})))))))
+
+(testing "#lookup"
+  (deftest lookup-returns-record
+    (let [Player (->Player)
+          player (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)]
+      (is (= "Wall"
+             (:player/lastname (.lookup Player (:db/id player) {} db-uri))))))
+
+  (deftest lookup-returns-nil-if-no-record-found
+    (let [Player (->Player)
+          player (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)]
+      (is (= nil
+             (.lookup Player (inc (:db/id player)) {} db-uri))))))
+
+(testing "#one"
+  (deftest one-returns-record
+    (let [Player (->Player)]
+      (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)
+      (.create Player {:firstname "Bradley" :lastname "Beal"} {} db-uri)
+      (is (= true
+             (not (nil? (:db/id (.one Player {} db-uri)))))))))
 
 (testing "#data")
 (testing "#query")

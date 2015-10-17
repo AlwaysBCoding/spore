@@ -14,9 +14,10 @@
 
   (all [self] [self options] [self options db-uri])
   (where [self params] [self params options] [self params options db-uri])
-  ; (one [self] [self options])
-  ; (detect [self params] [self params options])
-  ; (lookup [self id] [self id options])
+  (detect [self params] [self params options] [self params options db-uri])
+  (lookup [self id] [self id options] [self id options db-uri])
+  (one [self] [self options] [self options db-uri])
+  
   ; (destroy-all [self] [self options])
   ; (destroy-where [self params] [self params options])
   ; (detect-or-create [self params] [self params options])
