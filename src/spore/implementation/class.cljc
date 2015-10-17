@@ -84,6 +84,25 @@
        :entities (map #(d/entity db %) ids)
        :records (map #(d/entity db %) ids)))))
 
+(defn where
+  ([self params {:keys [return] :or {return :records} :as options} db-uri]
+   (let [db (d/db (d/connect db-uri))
+         name-fn (comp symbol (partial str "?") name)
+         param-names (map name-fn (keys params))
+         param-vals (vals params)
+         attribute-names (map #(resource-helpers/resource-attribute (.ident self) %) (keys params))
+         where-clause (map #(vector '?eid %1 %2) attribute-names param-names)
+         in-clause (conj param-names '$)
+         final-clause (concat [:find '[?eid ...]]
+                              [:in] in-clause
+                              [:where] where-clause)
+         ids (apply d/q final-clause db param-vals)]
+     
+     (condp = return
+       :ids ids
+       :entities (map #(d/entity db %) ids)
+       :records (map #(d/entity db %) ids)))))
+
 ;
 ; (defn one
 ;   ([self] (one self {}))

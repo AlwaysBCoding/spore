@@ -25,4 +25,8 @@
 
      (class-protocol/all [self#] (class-protocol/all self# {}))
      (class-protocol/all [self# options#] (class-protocol/all self# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
-     (class-protocol/all [self# options# db-uri#] (class-implementation/all self# options# db-uri#))))
+     (class-protocol/all [self# options# db-uri#] (class-implementation/all self# options# db-uri#))
+
+     (class-protocol/where [self# params#] (class-protocol/where self# params# {}))
+     (class-protocol/where [self# params# options#] (class-protocol/where self# params# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
+     (class-protocol/where [self# params# options# db-uri#] (class-implementation/where self# params# options# db-uri#))))

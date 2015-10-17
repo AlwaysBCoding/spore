@@ -13,8 +13,8 @@
   (create [self params] [self params options] [self params options db-uri])
 
   (all [self] [self options] [self options db-uri])
+  (where [self params] [self params options] [self params options db-uri])
   ; (one [self] [self options])
-  ; (where [self params] [self params options])
   ; (detect [self params] [self params options])
   ; (lookup [self id] [self id options])
   ; (destroy-all [self] [self options])

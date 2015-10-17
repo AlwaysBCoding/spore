@@ -21,6 +21,10 @@ Data
 A string that represents the Datomic URI of the default database... (i.e. (.all Team)) would reach to this database. A model can be configured with a db-uri, but if not this is the fallback
 
 ### Manifest Spec
+Valid keypairs...
+{:type :string} <- defines the type of the attribute
+{:ref-type :game} <- only to be used for ref-types, specifies the ident of the ref that it should create an instance of when called with (.attr ) ...
+{:required true} <- the attribute is required and a record cannot be created without it
 
 ### Model Spec
 

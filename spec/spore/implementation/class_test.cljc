@@ -10,7 +10,8 @@
 (def player-manifest
   {:player
    {:firstname {:type :string}
-    :lastname {:type :string :required true}}})
+    :lastname {:type :string :required true}
+    :jerseyNumber {:type :long}}})
 
 (def team-manifest
   {:team
@@ -138,6 +139,24 @@
       (is (= 2
              (count (.all Player {} db-uri)))))))
 
-(testing "#data")
+(testing "#where"
+  (deftest returns-all-instances-single-attribute
+    (let [Player (->Player)]
+      (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)
+      (.create Player {:firstname "John" :lastname "Smith"} {} db-uri)
+      (.create Player {:firstname "John" :lastname "Tyler"} {} db-uri)
+      (.create Player {:firstname "Bradley" :lastname "Beal"} {} db-uri)
+      (is (= 3
+             (count (.where Player {:firstname "John"} {} db-uri))))))
 
+  (deftest returns-all-instances-compound-attribute
+    (let [Player (->Player)]
+      (.create Player {:firstname "John" :lastname "Wall" :jerseyNumber 2} {} db-uri)
+      (.create Player {:firstname "John" :lastname "Smith" :jerseyNumber 2} {} db-uri)
+      (.create Player {:firstname "John" :lastname "Tyler" :jerseyNumber 15} {} db-uri)
+      (.create Player {:firstname "Bradley" :lastname "Beal" :jerseyNumber 3} {} db-uri)
+      (is (= 2
+             (count (.where Player {:firstname "John" :jerseyNumber 2} {} db-uri)))))))
+
+(testing "#data")
 (testing "#query")
