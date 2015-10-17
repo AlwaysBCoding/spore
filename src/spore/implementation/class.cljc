@@ -35,20 +35,32 @@
                          (if (validate-build-parameter (.manifest self) key value)
                            (assoc memo (resource-helpers/resource-attribute (.ident self) key) value)
                            (throw (ex-info
-                                   "Attempted to call build with a parameter that is not defined on the manifest"
+                                   "Called #build with a parameter that is not defined on the manifest"
                                    {:model (.ident self)
                                     :parameter key}))))
                        {} params)
-          built-record (merge
-                         {:db/id tempid
-                          (resource-helpers/resource-attribute (.ident self) :sporeID) (d/squuid)}
-                         tx-fragment)]
-      built-record)))
+          tx-record (merge
+                     {:db/id tempid
+                      (resource-helpers/resource-attribute (.ident self) :sporeID) (d/squuid)}
+                     tx-fragment)]
+      tx-record)))
+
+(defn create
+  ([self params {:keys [return] :or {return :record} :as options} db-uri]
+   (let [connection (d/connect db-uri)
+         tx-record (.build self params)
+         tx-data (vector tx-record)
+         tx-result @(d/transact connection tx-data)
+         record (d/entity (:db-after tx-result) (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) (:db/id tx-record)))]
+
+     (condp = return
+       :id (:db/id record)
+       :entity record
+       :record record))))
 
 (defn all
-  ([self {:keys [return] :or {return :records} :as options}]
-    (let [db-uri (var-get (resolve (symbol "spore.config/default-db-uri")))
-          db (d/db (d/connect db-uri))
+  ([self {:keys [return] :or {return :records} :as options} db-uri]
+    #_(let [db (d/db (d/connect db-uri))
           ids (d/q '[:find [?eid ...]
                      :in $ ?attribute
                      :where
@@ -84,9 +96,6 @@
 ;   ([self params options] "..."))
 ;
 ;
-; (defn create
-;   ([self params] (create self params {}))
-;   ([self params options] "..."))
 ;
 ; (defn detect-or-create
 ;   ([self params] (detect-or-create self params {}))

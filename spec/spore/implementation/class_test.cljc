@@ -24,18 +24,23 @@
     :display {:type :string}}})
 
 ;; Fixtures
-(defn create-database [test-fn]
-  (d/create-database db-uri)  
-  (test-fn)
-  (d/delete-database db-uri))
-
 (defn create-spore-class [test-fn]
   (spore/SporeClass Player player-manifest)
   (spore/SporeClass PlayerGame player-game-manifest)
   (spore/SporeClass BasketballGameEvent basketball-game-event-manifest)
   (test-fn))
 
-(use-fixtures :once create-database create-spore-class)
+(defn create-database [test-fn]
+  (d/create-database db-uri)
+  (test-fn)
+  (d/delete-database db-uri))
+
+(defn sync-database-schema [test-fn]
+  (d/transact (d/connect db-uri) (.schema (->Player)))
+  (test-fn))
+
+(use-fixtures :once create-spore-class)
+(use-fixtures :each create-database sync-database-schema)
 
 ;; Assertions
 (testing "#manifest"
@@ -88,11 +93,24 @@
         (.build Player {:firstname "John"
                         :middlename "Hildred"})
         (catch Exception e
-          (is (= "Attempted to call build with a parameter that is not defined on the manifest"
+          (is (= "Called #build with a parameter that is not defined on the manifest"
                  (.getMessage e)))
           (is (= (ex-data e)
                  {:model :player
                   :parameter :middlename})))))))
+
+(testing "#create"
+  (deftest transacts-record
+    (let [Player (->Player)
+          result (.create Player {:firstname "Bradley" :lastname "Beal"} {} db-uri)]
+      (is (= java.lang.Long
+             (.getClass (:db/id result))))))
+
+  (deftest can-return-id
+    (let [Player (->Player)
+          result (.create Player {:firstname "Bradley" :lastname "Beal"} {:return :id} db-uri)]
+      (is (= java.lang.Long
+             (.getClass result))))))
 
 (testing "#all")
 

@@ -19,5 +19,10 @@
      (class-protocol/build [self# params#] (class-protocol/build self# params# {}))
      (class-protocol/build [self# params# options#] (class-implementation/build self# params# options#))
 
+     (class-protocol/create [self# params#] (class-protocol/create self# params# {}))
+     (class-protocol/create [self# params# options#] (class-protocol/create self# params# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
+     (class-protocol/create [self# params# options# db-uri#] (class-implementation/create self# params# options# db-uri#))
+
      (class-protocol/all [self#] (class-protocol/all self# {}))
-     (class-protocol/all [self# options#] (class-implementation/all self# options#))))
+     (class-protocol/all [self# options#] (class-protocol/all self# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
+     (class-protocol/all [self# options# db-uri#] (class-implementation/all self# options# db-uri#))))
