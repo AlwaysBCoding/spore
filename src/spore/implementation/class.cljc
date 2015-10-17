@@ -154,15 +154,21 @@
        :id id
        :entity (d/entity db id)
        :record (d/entity db id)))))
-;
-; (defn destroy-all
-;   ([self] (destroy-all self {}))
-;   ([self options] "..."))
-;
-; (defn destroy-where
-;   ([self params] (destroy-where self params {}))
-;   ([self params options] "..."))
 
-; (defn detect-or-create
-;   ([self params] (detect-or-create self params {}))
-;   ([self params options] "..."))
+(defn detect-or-create
+  ([self params {:keys [return] :or {return :record} :as options} db-uri]
+   (if-let [record (.detect self params options db-uri)]
+     record
+     (.create self params options db-uri))))
+
+(defn destroy-all  
+  ([self {:keys [] :or {} :as options} db-uri]
+   (let [connection (d/connect db-uri)
+         tx-data (mapv #(vector :db.fn/retractEntity %) (.all self {:return :ids} db-uri))]
+     (d/transact connection tx-data))))
+
+(defn destroy-where
+  ([self params options db-uri]
+   (let [connection (d/connect db-uri)
+         tx-data (mapv #(vector :db.fn/retractEntity %) (.where self params {:return :ids} db-uri))]
+     (d/transact connection tx-data))))

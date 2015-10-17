@@ -194,7 +194,12 @@
         (catch Exception e
           (is (= (ex-data e)
                  {:model :player
-                  :parameter :middlename})))))))
+                  :parameter :middlename}))))))
+
+  (deftest detect-returns-nil-if-no-record-present
+    (let [Player (->Player)]
+      (is (= nil
+             (.detect Player {:lastname "Wall"} {} db-uri))))))
 
 (testing "#lookup"
   (deftest lookup-returns-record
@@ -216,6 +221,42 @@
       (.create Player {:firstname "Bradley" :lastname "Beal"} {} db-uri)
       (is (= true
              (not (nil? (:db/id (.one Player {} db-uri)))))))))
+
+(testing "#detect-or-create"
+  (deftest detect-or-create-detects-properly
+    (let [Player (->Player)
+          player (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)]
+      (is (= (:db/id player)
+             (:db/id (.detect-or-create Player {:firstname "John" :lastname "Wall"} {} db-uri))))))
+
+  (deftest detect-or-create-creates-properly
+    (let [Player (->Player)
+          player (.detect-or-create Player {:firstname "John" :lastname "Wall"} {} db-uri)]
+      (is (= java.lang.Long
+             (.getClass (:db/id player)))))))
+
+(testing "#destroy-all"
+  (deftest destroy-all-destroys-properly
+    (let [Player (->Player)]
+      (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)
+      (.create Player {:firstname "Bradley" :lastname "Beal"} {} db-uri)
+      (is (= 2
+             (count (.all Player {} db-uri))))
+      (.destroy-all Player {} db-uri)
+      (is (= 0
+             (count (.all Player {} db-uri)))))))
+
+(testing "#destroy-where"
+  (deftest destroy-where-destroys-properly
+    (let [Player (->Player)]
+      (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)
+      (.create Player {:firstname "John" :lastname "Tyler"} {} db-uri)
+      (.create Player {:firstname "Bradley" :lastname "Beal"} {} db-uri)
+      (is (= 3
+             (count (.all Player {} db-uri))))
+      (.destroy-where Player {:firstname "John"} {} db-uri)
+      (is (= 1
+             (count (.all Player {} db-uri)))))))
 
 (testing "#data")
 (testing "#query")

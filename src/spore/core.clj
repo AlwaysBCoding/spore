@@ -41,4 +41,16 @@
 
      (class-protocol/one [self#] (class-protocol/one self# {}))
      (class-protocol/one [self# options#] (class-protocol/one self# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
-     (class-protocol/one [self# options# db-uri#] (class-implementation/one self# options# db-uri#))))
+     (class-protocol/one [self# options# db-uri#] (class-implementation/one self# options# db-uri#))
+
+     (class-protocol/detect-or-create [self# params#] (class-protocol/detect-or-create self# params# {}))
+     (class-protocol/detect-or-create [self# params# options#] (class-protocol/detect-or-create self# params# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
+     (class-protocol/detect-or-create [self# params# options# db-uri#] (class-implementation/detect-or-create self# params# options# db-uri#))
+
+     (class-protocol/destroy-all [self#] (class-protocol/destroy-all self# {}))
+     (class-protocol/destroy-all [self# options#] (class-protocol/destroy-all self# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
+     (class-protocol/destroy-all [self# options# db-uri#] (class-implementation/destroy-all self# options# db-uri#))
+
+     (class-protocol/destroy-where [self# params#] (class-protocol/destroy-where self# params# {}))
+     (class-protocol/destroy-where [self# params# options#] (class-protocol/destroy-where self# params# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
+     (class-protocol/destroy-where [self# params# options# db-uri#] (class-implementation/destroy-where self# params# options# db-uri#))))
