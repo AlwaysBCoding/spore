@@ -1,5 +1,6 @@
 (ns spore.implementation.class
   (:require [spore.helpers.resource :as resource-helpers]
+            [spore.helpers.util :as util]
             [datomic.api :as d]))
 
 (defn manifest
@@ -24,20 +25,12 @@
     (let [invokable-query-fn (resolve (symbol (str "spore.query." (resource-helpers/resource-ident->resource-namespace (.ident self))) (str (name query-fn))))]
       (invokable-query-fn options))))
 
-(defn ^:private validate-build-parameter [manifest key value]
-  (.contains (keys (first (vals manifest))) key))
-
 (defn build
   ([self params {:keys [] :or {} :as options}]
     (let [tempid (d/tempid :db.part/user)
           tx-fragment (reduce-kv
                        (fn [memo key value]
-                         (if (validate-build-parameter (.manifest self) key value)
-                           (assoc memo (resource-helpers/resource-attribute (.ident self) key) value)
-                           (throw (ex-info
-                                   "Called #build with a parameter that is not defined on the manifest"
-                                   {:model (.ident self)
-                                    :parameter key}))))
+                         (assoc memo (resource-helpers/resource-attribute (.ident self) key) value))
                        {} params)
           tx-record (merge
                      {:db/id tempid
@@ -45,8 +38,28 @@
                      tx-fragment)]
       tx-record)))
 
+(defn ^:private validate-params [self params]
+  (let [required-attributes (->> (first (vals (.manifest self)))
+                                 (filter (fn [[key value]]
+                                           (util/contains-submap? value {:required true})))
+                                 (map first))]
+
+    (if-not (util/contains-map-keys? params required-attributes)
+      (throw (ex-info
+              "Not all required attributes defined on the manifest are present in the params"
+              {:model (.ident self)
+               :required-attributes required-attributes})))
+    
+    (doseq [[key value] params]
+      (if-not (.contains (keys (first (vals (.manifest self)))) key)
+        (throw (ex-info
+                "Tried to build tx-data with a parameter that is not defined on the manifest"
+                {:model (.ident self)
+                 :parameter key}))))))
+
 (defn create
   ([self params {:keys [return] :or {return :record} :as options} db-uri]
+   (validate-params self params)
    (let [connection (d/connect db-uri)
          tx-record (.build self params)
          tx-data (vector tx-record)
@@ -60,16 +73,17 @@
 
 (defn all
   ([self {:keys [return] :or {return :records} :as options} db-uri]
-    #_(let [db (d/db (d/connect db-uri))
-          ids (d/q '[:find [?eid ...]
-                     :in $ ?attribute
-                     :where
-                     [?eid ?attribute ?sporeID]]
-                db (resource-helpers/resource-attribute (.ident self)))]
-      (condp = return
-        :ids ids
-        :entities (map #(d/entity db %) ids)
-        :records (map #(d/entity db %) ids)))))
+   (let [db (d/db (d/connect db-uri))
+         ids (d/q '[:find [?eid ...]
+                    :in $ ?attribute
+                    :where
+                    [?eid ?attribute ?sporeID]]
+                  db (resource-helpers/resource-attribute (.ident self)))]
+     (condp = return
+       :ids ids
+       :entities (map #(d/entity db %) ids)
+       :records (map #(d/entity db %) ids)))))
+
 ;
 ; (defn one
 ;   ([self] (one self {}))
