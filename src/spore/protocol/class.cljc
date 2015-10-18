@@ -3,6 +3,7 @@
 (defprotocol SporeClassProtocol
   ""
   (manifest [self])
+  (dependencies [self])
   (ident [self])
   (schema [self])
 

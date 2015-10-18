@@ -3,10 +3,6 @@
             [spore.helpers.util :as util]
             [datomic.api :as d]))
 
-(defn manifest
-  ([self manifest]
-    manifest))
-
 (defn ident
   ([self]
     (first (keys (.manifest self)))))

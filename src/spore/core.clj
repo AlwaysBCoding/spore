@@ -3,7 +3,7 @@
             [spore.implementation.class :as class-implementation]
             [com.stuartsierra.component :as component]))
 
-(defmacro SporeClass [class-name manifest & body]
+(defmacro SporeClass [class-name manifest dependencies & body]
   `(defrecord ~class-name []
 
      component/Lifecycle
@@ -16,9 +16,10 @@
      
      class-protocol/SporeClassProtocol
 
-     (class-protocol/manifest [self#] (class-implementation/manifest self# ~manifest))
+     (class-protocol/manifest [self#] ~manifest)
+     (class-protocol/dependencies [self#] ~dependencies)
      (class-protocol/ident [self#] (class-implementation/ident self#))
-     (class-protocol/schema [self#] (class-implementation/schema self#))
+     (class-protocol/schema [self#] (class-implementation/schema self#))     
 
      (class-protocol/data [self# data-fn#] (class-protocol/data self# data-fn# {}))
      (class-protocol/data [self# data-fn# options#] (class-implementation/data self# data-fn# options#))

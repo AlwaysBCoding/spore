@@ -32,10 +32,10 @@
 
 ;; Fixtures
 (defn create-spore-classes [test-fn]
-  (spore/SporeClass Player player-manifest)
-  (spore/SporeClass Team team-manifest)
-  (spore/SporeClass PlayerGame player-game-manifest)
-  (spore/SporeClass BasketballGameEvent basketball-game-event-manifest)
+  (spore/SporeClass Player player-manifest [])
+  (spore/SporeClass Team team-manifest [])
+  (spore/SporeClass PlayerGame player-game-manifest [])
+  (spore/SporeClass BasketballGameEvent basketball-game-event-manifest [])
   (test-fn))
 
 (defn create-database [test-fn]
@@ -53,12 +53,7 @@
 (use-fixtures :once create-spore-classes)
 (use-fixtures :each create-database sync-database-schema)
 
-;; Assertions
-(testing "#manifest"
-  (deftest manifest-returns-manifest
-    (let [Player (->Player)]
-      (is (= (.manifest Player) player-manifest)))))
-
+;; Assertion
 (testing "#ident"
   (deftest ident-returns-ident-single-word
     (let [Player (->Player)]
