@@ -63,4 +63,6 @@
 
      (class-protocol/destroy-where [self# params#] (class-protocol/destroy-where self# params# {}))
      (class-protocol/destroy-where [self# params# options#] (class-protocol/destroy-where self# params# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
-     (class-protocol/destroy-where [self# params# options# db-uri#] (class-implementation/destroy-where self# params# options# db-uri#))))
+     (class-protocol/destroy-where [self# params# options# db-uri#] (class-implementation/destroy-where self# params# options# db-uri#))
+
+     ~@body))
