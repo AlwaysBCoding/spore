@@ -1,9 +1,19 @@
 (ns spore.core
   (:require [spore.protocol.class :as class-protocol :refer (SporeClassProtocol)]
-            [spore.implementation.class :as class-implementation]))
+            [spore.implementation.class :as class-implementation]
+            [com.stuartsierra.component :as component]))
 
 (defmacro SporeClass [class-name manifest & body]
   `(defrecord ~class-name []
+
+     component/Lifecycle
+
+     (start [self#]
+      self#)
+
+     (stop [self#]
+       self#)
+     
      SporeClassProtocol
 
      (class-protocol/manifest [self#] (class-implementation/manifest self# ~manifest))
