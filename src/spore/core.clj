@@ -1,5 +1,5 @@
 (ns spore.core
-  (:require [spore.protocol.class :as class-protocol :refer (SporeClassProtocol)]
+  (:require [spore.protocol.class :as class-protocol]
             [spore.implementation.class :as class-implementation]
             [com.stuartsierra.component :as component]))
 
@@ -8,13 +8,13 @@
 
      component/Lifecycle
 
-     (start [self#]
+     (component/start [self#]
       self#)
 
-     (stop [self#]
+     (component/stop [self#]
        self#)
      
-     SporeClassProtocol
+     class-protocol/SporeClassProtocol
 
      (class-protocol/manifest [self#] (class-implementation/manifest self# ~manifest))
      (class-protocol/ident [self#] (class-implementation/ident self#))
