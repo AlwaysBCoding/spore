@@ -18,16 +18,12 @@
 
      (instance-protocol/display [self#] (instance-protocol/display self# {}))
      (instance-protocol/display [self# options#] (instance-implementation/display self# options#))
-
+     
      (instance-protocol/serialize [self# serializer#] (instance-protocol/serialize self# serializer# {}))
-     (instance-protocol/serialize [self# serializer# options#]
-       ((resolve (symbol (str "spore.serializer." (resource-helpers/ident->namespace (instance-protocol/ident self#))) (name serializer#)))
-        self# options#))
+     (instance-protocol/serialize [self# serializer# options#] (instance-implementation/serialize self# serializer# options#))
      
      (instance-protocol/data [self# data-fn#] (instance-protocol/data self# data-fn# {}))
-     (instance-protocol/data [self# data-fn# options#]
-       ((resolve (symbol (str "spore.data." (resource-helpers/ident->namespace (instance-protocol/ident self#))) (name data-fn#)))
-        self# options#))
+     (instance-protocol/data [self# data-fn# options#] (instance-implementation/data self# data-fn# options#))
 
      (instance-protocol/attr [self# attribute#] (instance-protocol/attr self# attribute# {}))
      (instance-protocol/attr [self# attribute# options#] (instance-implementation/attr self# attribute# options#))

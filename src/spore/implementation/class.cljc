@@ -13,12 +13,12 @@
 
 (defn data
   ([self data-fn options]
-    (let [invokable-data-fn (resolve (symbol (str "spore.data." (resource-helpers/ident->namespace (.ident self))) (str (name data-fn))))]
+   (let [invokable-data-fn (resolve (symbol (str "spore.data." (resource-helpers/ident->namespace (.ident self))) (name data-fn)))]
       (invokable-data-fn options))))
 
 (defn query
   ([self query-fn options]
-    (let [invokable-query-fn (resolve (symbol (str "spore.query." (resource-helpers/ident->namespace (.ident self))) (str (name query-fn))))]
+   (let [invokable-query-fn (resolve (symbol (str "spore.query." (resource-helpers/ident->namespace (.ident self))) (name query-fn)))]
       (invokable-query-fn options))))
 
 (defn build

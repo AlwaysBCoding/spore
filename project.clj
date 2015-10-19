@@ -11,13 +11,15 @@
                  [com.datomic/datomic-pro "0.9.5327" :exclusions [org.clojure/clojure ... joda-time]]
                  [camel-snake-kebab "0.3.2"]
                  [com.stuartsierra/component "0.3.0"]]
-  
+
   :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo"
                                    :username :env/DATOMIC_USERNAME
                                    :password :env/DATOMIC_PASSWORD}}
-  
+
   :global-vars {*print-length* 25}
-  
+
+  :jvm-opts ["-Xss1g" "-Xmx4g" "-XX:MaxPermSize=256m"]
+
   :min-lein-version "2.0.0"
 
   :source-paths ["src"]

@@ -30,6 +30,11 @@
    {:game {:type :ref :ref-type :game}
     :display {:type :string}}})
 
+(def CIPlayer nil)
+(def CITeam nil)
+(def CIPlayerGame nil)
+(def CIBasketballGameEvent nil)
+
 ;; Fixtures
 (defn define-spore-instances [test-fn]
   (spore/SporeInstance iplayer)
@@ -39,10 +44,14 @@
   (test-fn))
 
 (defn define-spore-classes [test-fn]
-  (spore/SporeClass IPlayer player-manifest #(->iplayer %1 %2) [])
-  (spore/SporeClass ITeam team-manifest #(->iteam %1 %2) [])
-  (spore/SporeClass IPlayerGame player-game-manifest #(->iplayer-game %1 %2) [])
-  (spore/SporeClass IBasketballGameEvent basketball-game-event-manifest #(->ibasketball-game-event %1 %2) [])
+  (spore/SporeClass IPlayer)
+  (alter-var-root #'CIPlayer (fn [data] (->IPlayer player-manifest #(->iplayer %1 %2) [])))
+  (spore/SporeClass ITeam)
+  (alter-var-root #'CITeam (fn [data] (->ITeam team-manifest #(->iteam %1 %2) [])))
+  (spore/SporeClass IPlayerGame)
+  (alter-var-root #'CIPlayerGame (fn [data] (->IPlayerGame player-game-manifest #(->iplayer-game %1 %2) [])))
+  (spore/SporeClass IBasketballGameEvent)
+  (alter-var-root #'CIBasketballGameEvent (fn [data] (->IBasketballGameEvent basketball-game-event-manifest #(->ibasketball-game-event %1 %2) [])))
   (test-fn))
 
 (defn create-database [test-fn]
@@ -51,10 +60,10 @@
   (d/delete-database db-uri))
 
 (defn sync-database-schema [test-fn]
-  (d/transact (d/connect db-uri) (reduce into [] (vector (.schema (->IPlayer))
-                                                         (.schema (->ITeam))
-                                                         (.schema (->IPlayerGame))
-                                                         (.schema (->IBasketballGameEvent)))))
+  (d/transact (d/connect db-uri) (reduce into [] (vector (.schema CIPlayer)
+                                                         (.schema CITeam)
+                                                         (.schema CIPlayerGame)
+                                                         (.schema CIBasketballGameEvent))))
   (test-fn))
 
 (use-fixtures :once define-spore-instances define-spore-classes)
@@ -63,8 +72,7 @@
 ;; Assertions
 (testing "#id"
   (deftest id-returns-datomic-id
-    (let [Player (->IPlayer)
-          result (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)]
+    (let [result (.create CIPlayer {:firstname "John" :lastname "Wall"} {} db-uri)]
       (is (= java.lang.Long 
              (.getClass (.id result))))
       (is (= java.util.UUID
@@ -75,10 +83,14 @@
 
 (testing "#attr"
   (deftest attr-returns-simple-attribute
-    (is (= true false)))
+    (let [result (.create CIPlayer {:firstname "John" :lastname "Wall"} {} db-uri)]
+      (is (= "John"
+             (.attr result :firstname)))))
 
   (deftest attr-returns-nil-if-no-attribute
-    (is (= true false)))
+    (let [result (.create CIPlayer {:firstname "John" :lastname "Wall"} {} db-uri)]
+      (is (= nil
+             (.attr result :middlename)))))
 
   (deftest attr-can-create-instance-of-relation-if-ref-type-is-defined
     (is (= true false)))
