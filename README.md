@@ -26,7 +26,18 @@ Valid keypairs...
 {:ref-type :game} <- only to be used for ref-types, specifies the ident of the ref that it should create an instance of when called with (.attr ) ...
 {:required true} <- the attribute is required and a record cannot be created without it
 
+The ident is the top-level key in the manifest. Idents should be camelCase. A dot is a valid ident character to use as name-spacing. The next character after the dot starts a new camelCase string.
+It's actually important that these names follow a specific pattern.
+
+{:player {...}}
+{:playerGame {...}}
+{:basketball.gameEvent {...}}
+
 ### Model Spec
+The model namespace/file needs to define an exports map
+(def exports
+  {:class (->Player)}) etc...
+The exports map is what's picked up by the Spore parser.
 
 ### Query Spec
 
