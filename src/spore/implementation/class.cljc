@@ -5,11 +5,11 @@
 
 (defn ident
   ([self]
-    (first (keys (.manifest self)))))
+    (first (keys (.-manifest self)))))
 
 (defn schema
   ([self]
-    (resource-helpers/manifest->schema (.manifest self))))
+    (resource-helpers/manifest->schema (.-manifest self))))
 
 (defn data
   ([self data-fn options]
@@ -35,7 +35,7 @@
       tx-record)))
 
 (defn ^:private validate-create-params [self params]
-  (let [required-attributes (->> (first (vals (.manifest self)))
+  (let [required-attributes (->> (first (vals (.-manifest self)))
                                  (filter (fn [[key value]]
                                            (util/contains-submap? value {:required true})))
                                  (map first))]
@@ -47,14 +47,14 @@
                :required-attributes required-attributes})))
 
     (doseq [[key value] params]
-      (if-not (.contains (keys (first (vals (.manifest self)))) key)
+      (if-not (.contains (keys (first (vals (.-manifest self)))) key)
         (throw (ex-info
                 "Tried to build tx-data with a parameter that is not defined on the manifest"
                 {:model (.ident self)
                  :parameter key}))))))
 
 (defn create
-  ([self params {:keys [return] :or {return :record} :as options} db-uri]
+  ([self params {:keys [return instance-constructor] :or {return :record} :as options} db-uri]
    (validate-create-params self params)
    (let [connection (d/connect db-uri)
          tx-record (.build self params)
@@ -65,10 +65,10 @@
      (condp = return
        :id (:db/id record)
        :entity record
-       :record record))))
+       :record (instance-constructor (.-manifest self) record)))))
 
 (defn all
-  ([self {:keys [return] :or {return :records} :as options} db-uri]
+  ([self {:keys [return instance-constructor] :or {return :records} :as options} db-uri]
    (let [db (d/db (d/connect db-uri))
          ids (d/q '[:find [?eid ...]
                     :in $ ?attribute
@@ -83,14 +83,14 @@
 (defn ^:private validate-query-params [self params]
 
   (doseq [[key value] params]
-    (if-not (.contains (keys (first (vals (.manifest self)))) key)
+    (if-not (.contains (keys (first (vals (.-manifest self)))) key)
       (throw (ex-info
               "Tried to build a query with a parameter that is not defined on the manifest"
               {:model (.ident self)
                :parameter key})))))
 
 (defn where
-  ([self params {:keys [return] :or {return :records} :as options} db-uri]
+  ([self params {:keys [return instance-constructor] :or {return :records} :as options} db-uri]
    (validate-query-params self params)
    (let [db (d/db (d/connect db-uri))
          name-fn (comp symbol (partial str "?") name)
@@ -110,7 +110,7 @@
        :records (map #(d/entity db %) ids)))))
 
 (defn detect
-  ([self params {:keys [return] :or {return :record} :as options} db-uri]
+  ([self params {:keys [return instance-constructor] :or {return :record} :as options} db-uri]
    (validate-query-params self params)
    (let [db (d/db (d/connect db-uri))
          name-fn (comp symbol (partial str "?") name)
@@ -122,19 +122,26 @@
          final-clause (concat [:find '?eid '.]
                               [:in] in-clause
                               [:where] where-clause)
-         id (apply d/q final-clause db param-vals)]
+         id (apply d/q final-clause db param-vals)
+         record (d/entity db id)]
 
-     (condp = return
-       :id id
-       :entity (d/entity db id)
-       :record (d/entity db id)))))
+     (if record
+       (condp = return
+         :id id
+         :entity record
+         :record (instance-constructor (.-manifest self) record))
+       nil))))
 
 (defn lookup
-  ([self id {:keys [] :or {} :as options} db-uri]
+  ([self id {:keys [return instance-constructor] :or {return :record} :as options} db-uri]
    (let [db (d/db (d/connect db-uri))
-         entity (d/entity db id)]
-     (if-not (empty? (into [] entity))
-       entity
+         record (d/entity db id)]
+
+     (if (not (empty? (into [] record)))
+       (condp = return
+         :id id
+         :entity record
+         :record (instance-constructor (.-manifest self) record))
        nil))))
 
 (defn one

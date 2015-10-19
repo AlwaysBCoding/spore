@@ -71,8 +71,23 @@
              (.getClass (.id result {:source :sporeID}))))
 
       ;; Throws an error if id is called with an invalid source parameter
-)))
+      )))
+
+(testing "#attr"
+  (deftest attr-returns-simple-attribute
+    (is (= true false)))
+
+  (deftest attr-returns-nil-if-no-attribute
+    (is (= true false)))
+
+  (deftest attr-can-create-instance-of-relation-if-ref-type-is-defined
+    (is (= true false)))
+
+  (deftest attr-returns-nil-if-no-attribute-ref-type
+    (is (= true false))))
 
 (testing "#display")
+
 (testing "#serialize")
+
 (testing "#data")

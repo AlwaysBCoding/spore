@@ -7,9 +7,11 @@
             [spore.helpers.resource :as resource-helpers]))
 
 (defmacro SporeInstance [instance-name & body]
-  `(defrecord ~instance-name [~'ident ~'entity]
+  `(defrecord ~instance-name [~'manifest ~'entity]
 
      instance-protocol/SporeInstanceProtocol
+
+     (instance-protocol/ident [self#] (instance-implementation/ident self#))
 
      (instance-protocol/id [self#] (instance-protocol/id self# {}))
      (instance-protocol/id [self# options#] (instance-implementation/id self# options#))
@@ -19,18 +21,21 @@
 
      (instance-protocol/serialize [self# serializer#] (instance-protocol/serialize self# serializer# {}))
      (instance-protocol/serialize [self# serializer# options#]
-       ((resolve (symbol (str "spore.serializer." (resource-helpers/ident->namespace ~'ident)) (name serializer#)))
+       ((resolve (symbol (str "spore.serializer." (resource-helpers/ident->namespace (instance-protocol/ident self#))) (name serializer#)))
         self# options#))
      
      (instance-protocol/data [self# data-fn#] (instance-protocol/data self# data-fn# {}))
      (instance-protocol/data [self# data-fn# options#]
-       ((resolve (symbol (str "spore.data." (resource-helpers/ident->namespace ~'ident)) (name serializer#)))
+       ((resolve (symbol (str "spore.data." (resource-helpers/ident->namespace (instance-protocol/ident self#))) (name data-fn#)))
         self# options#))
+
+     (instance-protocol/attr [self# attribute#] (instance-protocol/attr self# attribute# {}))
+     (instance-protocol/attr [self# attribute# options#] (instance-implementation/attr self# attribute# options#))
      
      ~@body))
-
-(defmacro SporeClass [class-name manifest instance-constructor dependencies & body]
-  `(defrecord ~class-name []
+        
+(defmacro SporeClass [class-name & body]
+  `(defrecord ~class-name [~'manifest ~'instance-constructor ~'dependencies]
 
      component/Lifecycle
 
@@ -42,8 +47,6 @@
      
      class-protocol/SporeClassProtocol
 
-     (class-protocol/manifest [self#] ~manifest)
-     (class-protocol/dependencies [self#] ~dependencies)
      (class-protocol/ident [self#] (class-implementation/ident self#))
      (class-protocol/schema [self#] (class-implementation/schema self#))     
 
@@ -58,34 +61,31 @@
 
      (class-protocol/create [self# params#] (class-protocol/create self# params# {}))
      (class-protocol/create [self# params# options#] (class-protocol/create self# params# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
-     (class-protocol/create [self# params# options# db-uri#]
-       (~instance-constructor
-        (class-protocol/ident self#)
-        (class-implementation/create self# params# options# db-uri#)))
+     (class-protocol/create [self# params# options# db-uri#] (class-implementation/create self# params# (merge options# {:instance-constructor ~'instance-constructor}) db-uri#))
 
      (class-protocol/all [self#] (class-protocol/all self# {}))
      (class-protocol/all [self# options#] (class-protocol/all self# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
-     (class-protocol/all [self# options# db-uri#] (class-implementation/all self# options# db-uri#))
+     (class-protocol/all [self# options# db-uri#] (class-implementation/all self# (merge options# {:instance-constructor ~'instance-constructor}) db-uri#))
 
      (class-protocol/where [self# params#] (class-protocol/where self# params# {}))
      (class-protocol/where [self# params# options#] (class-protocol/where self# params# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
-     (class-protocol/where [self# params# options# db-uri#] (class-implementation/where self# params# options# db-uri#))
+     (class-protocol/where [self# params# options# db-uri#] (class-implementation/where self# params# (merge options# {:instance-constructor ~'instance-constructor}) db-uri#))
 
      (class-protocol/detect [self# params#] (class-protocol/detect self# params# {}))
      (class-protocol/detect [self# params# options#] (class-protocol/detect self# params# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
-     (class-protocol/detect [self# params# options# db-uri#] (class-implementation/detect self# params# options# db-uri#))
+     (class-protocol/detect [self# params# options# db-uri#] (class-implementation/detect self# params# (merge options# {:instance-constructor ~'instance-constructor}) db-uri#))
 
      (class-protocol/lookup [self# id#] (class-protocol/lookup self# id# {}))
      (class-protocol/lookup [self# id# options#] (class-protocol/lookup self# id# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
-     (class-protocol/lookup [self# id# options# db-uri#] (class-implementation/lookup self# id# options# db-uri#))
+     (class-protocol/lookup [self# id# options# db-uri#] (class-implementation/lookup self# id# (merge options# {:instance-constructor ~'instance-constructor}) db-uri#))
 
      (class-protocol/one [self#] (class-protocol/one self# {}))
      (class-protocol/one [self# options#] (class-protocol/one self# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
-     (class-protocol/one [self# options# db-uri#] (class-implementation/one self# options# db-uri#))
+     (class-protocol/one [self# options# db-uri#] (class-implementation/one self# (merge options# {:instance-constructor ~'instance-constructor}) db-uri#))
 
      (class-protocol/detect-or-create [self# params#] (class-protocol/detect-or-create self# params# {}))
      (class-protocol/detect-or-create [self# params# options#] (class-protocol/detect-or-create self# params# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
-     (class-protocol/detect-or-create [self# params# options# db-uri#] (class-implementation/detect-or-create self# params# options# db-uri#))
+     (class-protocol/detect-or-create [self# params# options# db-uri#] (class-implementation/detect-or-create self# params# (merge options# {:instance-constructor ~'instance-constructor}) db-uri#))
 
      (class-protocol/destroy-all [self#] (class-protocol/destroy-all self# {}))
      (class-protocol/destroy-all [self# options#] (class-protocol/destroy-all self# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
