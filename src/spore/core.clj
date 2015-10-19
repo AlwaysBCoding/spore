@@ -1,9 +1,35 @@
 (ns spore.core
   (:require [spore.protocol.class :as class-protocol]
+            [spore.protocol.instance :as instance-protocol]
             [spore.implementation.class :as class-implementation]
-            [com.stuartsierra.component :as component]))
+            [spore.implementation.instance :as instance-implementation]
+            [com.stuartsierra.component :as component]
+            [spore.helpers.resource :as resource-helpers]))
 
-(defmacro SporeClass [class-name manifest dependencies & body]
+(defmacro SporeInstance [instance-name & body]
+  `(defrecord ~instance-name [~'ident ~'entity]
+
+     instance-protocol/SporeInstanceProtocol
+
+     (instance-protocol/id [self#] (instance-protocol/id self# {}))
+     (instance-protocol/id [self# options#] (instance-implementation/id self# options#))
+
+     (instance-protocol/display [self#] (instance-protocol/display self# {}))
+     (instance-protocol/display [self# options#] (instance-implementation/display self# options#))
+
+     (instance-protocol/serialize [self# serializer#] (instance-protocol/serialize self# serializer# {}))
+     (instance-protocol/serialize [self# serializer# options#]
+       ((resolve (symbol (str "spore.serializer." (resource-helpers/ident->namespace ~'ident)) (name serializer#)))
+        self# options#))
+     
+     (instance-protocol/data [self# data-fn#] (instance-protocol/data self# data-fn# {}))
+     (instance-protocol/data [self# data-fn# options#]
+       ((resolve (symbol (str "spore.data." (resource-helpers/ident->namespace ~'ident)) (name serializer#)))
+        self# options#))
+     
+     ~@body))
+
+(defmacro SporeClass [class-name manifest instance-constructor dependencies & body]
   `(defrecord ~class-name []
 
      component/Lifecycle
@@ -32,7 +58,10 @@
 
      (class-protocol/create [self# params#] (class-protocol/create self# params# {}))
      (class-protocol/create [self# params# options#] (class-protocol/create self# params# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
-     (class-protocol/create [self# params# options# db-uri#] (class-implementation/create self# params# options# db-uri#))
+     (class-protocol/create [self# params# options# db-uri#]
+       (~instance-constructor
+        (class-protocol/ident self#)
+        (class-implementation/create self# params# options# db-uri#)))
 
      (class-protocol/all [self#] (class-protocol/all self# {}))
      (class-protocol/all [self# options#] (class-protocol/all self# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))

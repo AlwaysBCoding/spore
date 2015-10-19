@@ -19,8 +19,8 @@
       (when (.isFile x)
         (load-file (.getCanonicalPath x))))))
 
-(defn resource-ident->resource-namespace [resource-ident]
-  (->kebab-case (clojure.string/replace (str (name resource-ident)) #"\." "-")))
+(defn ident->namespace [resource-ident]
+  (symbol (->kebab-case (clojure.string/replace (str (name resource-ident)) #"\." "-"))))
 
 (defn keyword->schema-key [field k]
   (if (nil? k)

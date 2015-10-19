@@ -1,32 +1,40 @@
-(ns spore.implementation.instance)
+(ns spore.implementation.instance
+  (:require [spore.helpers.resource :as resource-helpers]))
 
 (defn id
-  ([self] "..."))
-
-(defn attr
-  ([self attribute] (attr self attribute {}))
-  ([self attribute options] "..."))
+  ([self {:keys [source] :or {source :datomic} :as options}]
+   (condp = source
+     :datomic (:db/id (.-entity self))
+     :sporeID ((resource-helpers/resource-attribute (.-ident self) :sporeID) (.-entity self))
+     (throw (ex-info
+             "Called id on a resource with an unknown source parameter"
+             {:resource (.-ident self)
+              :source source})))))
 
 (defn display
-  ([self] (display self {}))
-  ([self options] "..."))
+  ([self {:keys [] :or {} :as options}]
+   (into [] (.-entity self))))
 
-(defn serialize
-  ([self serializer] (serialize self serializer {}))
-  ([self serializer options] "..."))
+;; (defn attr
+;;   ([self attribute] (attr self attribute {}))
+;;   ([self attribute options] "..."))
 
-(defn data
-  ([self data-fn] (data self data-fn {}))
-  ([self data-fn options] "..."))
+;; (defn serialize
+;;   ([self serializer] (serialize self serializer {}))
+;;   ([self serializer options] "..."))
 
-(defn destroy
-  ([self] (destroy self {}))
-  ([self options] "..."))
+;; (defn data
+;;   ([self data-fn] (data self data-fn {}))
+;;   ([self data-fn options] "..."))
 
-(defn revise
-  ([self params] (revise self params {}))
-  ([self params options] "..."))
+;; (defn destroy
+;;   ([self] (destroy self {}))
+;;   ([self options] "..."))
 
-(defn retract-components
-  ([self attribute] (retract-components self attribute {}))
-  ([self attribute options] "..."))
+;; (defn revise
+;;   ([self params] (revise self params {}))
+;;   ([self params options] "..."))
+
+;; (defn retract-components
+;;   ([self attribute] (retract-components self attribute {}))
+;;   ([self attribute options] "..."))

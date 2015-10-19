@@ -13,12 +13,12 @@
 
 (defn data
   ([self data-fn options]
-    (let [invokable-data-fn (resolve (symbol (str "spore.data." (resource-helpers/resource-ident->resource-namespace (.ident self))) (str (name data-fn))))]
+    (let [invokable-data-fn (resolve (symbol (str "spore.data." (resource-helpers/ident->namespace (.ident self))) (str (name data-fn))))]
       (invokable-data-fn options))))
 
 (defn query
   ([self query-fn options]
-    (let [invokable-query-fn (resolve (symbol (str "spore.query." (resource-helpers/resource-ident->resource-namespace (.ident self))) (str (name query-fn))))]
+    (let [invokable-query-fn (resolve (symbol (str "spore.query." (resource-helpers/ident->namespace (.ident self))) (str (name query-fn))))]
       (invokable-query-fn options))))
 
 (defn build
@@ -45,7 +45,7 @@
               "Not all required attributes defined on the manifest are present in the params"
               {:model (.ident self)
                :required-attributes required-attributes})))
-    
+
     (doseq [[key value] params]
       (if-not (.contains (keys (first (vals (.manifest self)))) key)
         (throw (ex-info
@@ -81,7 +81,7 @@
        :records (map #(d/entity db %) ids)))))
 
 (defn ^:private validate-query-params [self params]
-    
+
   (doseq [[key value] params]
     (if-not (.contains (keys (first (vals (.manifest self)))) key)
       (throw (ex-info
@@ -103,7 +103,7 @@
                               [:in] in-clause
                               [:where] where-clause)
          ids (apply d/q final-clause db param-vals)]
-     
+
      (condp = return
        :ids ids
        :entities (map #(d/entity db %) ids)
@@ -157,7 +157,7 @@
      record
      (.create self params options db-uri))))
 
-(defn destroy-all  
+(defn destroy-all
   ([self {:keys [] :or {} :as options} db-uri]
    (let [connection (d/connect db-uri)
          tx-data (mapv #(vector :db.fn/retractEntity %) (.all self {:return :ids} db-uri))]

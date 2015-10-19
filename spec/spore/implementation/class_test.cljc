@@ -1,4 +1,4 @@
-(ns spore.imeplementation.class-test
+(ns spore.implementation.class-test
   (:require [clojure.test :refer :all]
             [spec.helpers.matchers :refer :all]
             [spore.core :as spore]
@@ -31,11 +31,18 @@
     :display {:type :string}}})
 
 ;; Fixtures
-(defn create-spore-classes [test-fn]
-  (spore/SporeClass Player player-manifest [])
-  (spore/SporeClass Team team-manifest [])
-  (spore/SporeClass PlayerGame player-game-manifest [])
-  (spore/SporeClass BasketballGameEvent basketball-game-event-manifest [])
+(defn define-spore-instances [test-fn]
+  (spore/SporeInstance cplayer)
+  (spore/SporeInstance cteam)
+  (spore/SporeInstance cplayer-game)
+  (spore/SporeInstance cbasketball-game-event)
+  (test-fn))
+
+(defn define-spore-classes [test-fn]
+  (spore/SporeClass CPlayer player-manifest #(->cplayer %1 %2) [])
+  (spore/SporeClass CTeam team-manifest #(->cteam %1 %2) [])
+  (spore/SporeClass CPlayerGame player-game-manifest #(->cplayer-game %1 %2) [])
+  (spore/SporeClass CBasketballGameEvent basketball-game-event-manifest #(->cbasketball-game-event %1 %2) [])
   (test-fn))
 
 (defn create-database [test-fn]
@@ -44,32 +51,32 @@
   (d/delete-database db-uri))
 
 (defn sync-database-schema [test-fn]
-  (d/transact (d/connect db-uri) (reduce into [] (vector (.schema (->Player))
-                                                         (.schema (->Team))
-                                                         (.schema (->PlayerGame))
-                                                         (.schema (->BasketballGameEvent)))))
+  (d/transact (d/connect db-uri) (reduce into [] (vector (.schema (->CPlayer))
+                                                         (.schema (->CTeam))
+                                                         (.schema (->CPlayerGame))
+                                                         (.schema (->CBasketballGameEvent)))))
   (test-fn))
 
-(use-fixtures :once create-spore-classes)
+(use-fixtures :once define-spore-instances define-spore-classes)
 (use-fixtures :each create-database sync-database-schema)
 
-;; Assertion
+;; Assertions
 (testing "#ident"
   (deftest ident-returns-ident-single-word
-    (let [Player (->Player)]
+    (let [Player (->CPlayer)]
       (is (= (.ident Player) :player))))
 
   (deftest ident-returns-ident-compound-word
-    (let [PlayerGame (->PlayerGame)]
+    (let [PlayerGame (->CPlayerGame)]
       (is (= (.ident PlayerGame) :playerGame))))
 
   (deftest ident-returns-ident-namespaced-word
-    (let [BasketballGameEvent (->BasketballGameEvent)]
+    (let [BasketballGameEvent (->CBasketballGameEvent)]
       (is (= (.ident BasketballGameEvent) :basketball.gameEvent)))))
 
 (testing "#schema"
   (deftest schema-adds-spore-id-to-schema
-    (let [Player (->Player)]
+    (let [Player (->CPlayer)]
       (is (= 1
              (->> (.schema Player)
                   (filter #(contains-submap? % {:db/ident :player/sporeID
@@ -79,7 +86,7 @@
 
 (testing "#build"
   (deftest build-builds-simple-record
-    (let [Player (->Player)
+    (let [Player (->CPlayer)
           tx-data (.build Player {:firstname "John"
                                   :lastname "Wall"})]
       (is (= true
@@ -91,19 +98,19 @@
 
 (testing "#create"
   (deftest create-transacts-record
-    (let [Player (->Player)
+    (let [Player (->CPlayer)
           result (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)]
       (is (= java.lang.Long
              (.getClass (:db/id result))))))
 
   (deftest create-can-return-id
-    (let [Player (->Player)
+    (let [Player (->CPlayer)
           result (.create Player {:firstname "John" :lastname "Wall"} {:return :id} db-uri)]
       (is (= java.lang.Long
              (.getClass result)))))
 
   (deftest create-raises-error-if-parameter-is-not-in-manifest
-    (let [Player (->Player)]
+    (let [Player (->CPlayer)]
       (try
         (.create Player {:firstname "John"
                          :middlename "Hildred"
@@ -115,7 +122,7 @@
                   :parameter :middlename}))))))
 
   (deftest create-raises-error-if-required-field-is-not-present
-    (let [Player (->Player)]
+    (let [Player (->CPlayer)]
       (try
         (.create Player {:firstname "John"} {} db-uri)
         (throw (ex-info "" {:message "No exception thrown in function that is expected to error"}))
@@ -126,8 +133,8 @@
 
 (testing "#all"
   (deftest all-returns-all-instances
-    (let [Player (->Player)
-          Team (->Team)]
+    (let [Player (->CPlayer)
+          Team (->CTeam)]
       (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)
       (.create Player {:firstname "Bradley" :lastname "Beal"} {} db-uri)
       (.create Team {:market "Washington"} {} db-uri)
@@ -136,7 +143,7 @@
 
 (testing "#where"
   (deftest where-returns-all-instances-single-attribute
-    (let [Player (->Player)]
+    (let [Player (->CPlayer)]
       (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)
       (.create Player {:firstname "John" :lastname "Smith"} {} db-uri)
       (.create Player {:firstname "John" :lastname "Tyler"} {} db-uri)
@@ -145,7 +152,7 @@
              (count (.where Player {:firstname "John"} {} db-uri))))))
 
   (deftest where-returns-all-instances-compound-attribute
-    (let [Player (->Player)]
+    (let [Player (->CPlayer)]
       (.create Player {:firstname "John" :lastname "Wall" :jerseyNumber 2} {} db-uri)
       (.create Player {:firstname "John" :lastname "Smith" :jerseyNumber 2} {} db-uri)
       (.create Player {:firstname "John" :lastname "Tyler" :jerseyNumber 15} {} db-uri)
@@ -154,7 +161,7 @@
              (count (.where Player {:firstname "John" :jerseyNumber 2} {} db-uri))))))
 
   (deftest where-raises-error-if-parameter-is-not-in-manifest
-    (let [Player (->Player)]
+    (let [Player (->CPlayer)]
       (.create Player {:firstname "John" :lastname "Wall" :jerseyNumber 2} {} db-uri)
       (try
         (.where Player {:firstname "John" :middlename "Hildred"} {} db-uri)
@@ -166,14 +173,14 @@
 
 (testing "#detect"
   (deftest detect-returns-instance-single-attribute
-    (let [Player (->Player)]
+    (let [Player (->CPlayer)]
       (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)
       (.create Player {:firstname "Bradley" :lastname "Beal"} {} db-uri)
       (is (= "John"
              (:player/firstname (.detect Player {:lastname "Wall"} {} db-uri))))))
 
   (deftest detect-returns-instance-compound-attribute
-    (let [Player (->Player)]
+    (let [Player (->CPlayer)]
       (.create Player {:firstname "John" :lastname "Wall" :jerseyNumber 2} {} db-uri)
       (.create Player {:firstname "John" :lastname "Tyler" :jerseyNumber 15} {} db-uri)
       (.create Player {:firstname "Bradley" :lastname "Beal" :jerseyNumber 3} {} db-uri)
@@ -181,7 +188,7 @@
              (:player/lastname (.detect Player {:firstname "John" :jerseyNumber 2} {} db-uri))))))
   
   (deftest detect-raises-error-if-parameter-is-not-in-manifest
-    (let [Player (->Player)]
+    (let [Player (->CPlayer)]
       (.create Player {:firstname "John" :lastname "Wall" :jerseyNumber 2} {} db-uri)
       (try
         (.detect Player {:firstname "John" :middlename "Hildred"} {} db-uri)
@@ -192,26 +199,26 @@
                   :parameter :middlename}))))))
 
   (deftest detect-returns-nil-if-no-record-present
-    (let [Player (->Player)]
+    (let [Player (->CPlayer)]
       (is (= nil
              (.detect Player {:lastname "Wall"} {} db-uri))))))
 
 (testing "#lookup"
   (deftest lookup-returns-record
-    (let [Player (->Player)
+    (let [Player (->CPlayer)
           player (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)]
       (is (= "Wall"
              (:player/lastname (.lookup Player (:db/id player) {} db-uri))))))
 
   (deftest lookup-returns-nil-if-no-record-found
-    (let [Player (->Player)
+    (let [Player (->CPlayer)
           player (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)]
       (is (= nil
              (.lookup Player (inc (:db/id player)) {} db-uri))))))
 
 (testing "#one"
   (deftest one-returns-record
-    (let [Player (->Player)]
+    (let [Player (->CPlayer)]
       (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)
       (.create Player {:firstname "Bradley" :lastname "Beal"} {} db-uri)
       (is (= true
@@ -219,20 +226,20 @@
 
 (testing "#detect-or-create"
   (deftest detect-or-create-detects-properly
-    (let [Player (->Player)
+    (let [Player (->CPlayer)
           player (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)]
       (is (= (:db/id player)
              (:db/id (.detect-or-create Player {:firstname "John" :lastname "Wall"} {} db-uri))))))
 
   (deftest detect-or-create-creates-properly
-    (let [Player (->Player)
+    (let [Player (->CPlayer)
           player (.detect-or-create Player {:firstname "John" :lastname "Wall"} {} db-uri)]
       (is (= java.lang.Long
              (.getClass (:db/id player)))))))
 
 (testing "#destroy-all"
   (deftest destroy-all-destroys-properly
-    (let [Player (->Player)]
+    (let [Player (->CPlayer)]
       (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)
       (.create Player {:firstname "Bradley" :lastname "Beal"} {} db-uri)
       (is (= 2
@@ -243,7 +250,7 @@
 
 (testing "#destroy-where"
   (deftest destroy-where-destroys-properly
-    (let [Player (->Player)]
+    (let [Player (->CPlayer)]
       (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)
       (.create Player {:firstname "John" :lastname "Tyler"} {} db-uri)
       (.create Player {:firstname "Bradley" :lastname "Beal"} {} db-uri)
