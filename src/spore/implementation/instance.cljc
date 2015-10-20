@@ -37,8 +37,8 @@
             (not (empty? default-value)))
        ((resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
                          (str "->" (resource-helpers/ident->namespace (:ref-type attribute-manifest)))))
-        (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
-                         "manifest"))
+        (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
+                                  "manifest")))
         default-value)
 
        (and (= (:ref (:type attribute-manifest)))
@@ -49,8 +49,8 @@
         (fn [entity]
           ((resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
                             (str "->" (resource-helpers/ident->namespace (:ref-type attribute-manifest)))))
-           (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
-                            "manifest"))
+           (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
+                                     "manifest")))
            entity))
         default-value)
        
