@@ -68,14 +68,14 @@
      (invokable-data-fn options))))
 
 
-;; (defn destroy
-;;   ([self] (destroy self {}))
-;;   ([self options] "..."))
+(defn destroy
+  ([self options]
+   "..."))
 
-;; (defn revise
-;;   ([self params] (revise self params {}))
-;;   ([self params options] "..."))
+(defn revise
+  ([self params options]
+   "..."))
 
-;; (defn retract-components
-;;   ([self attribute] (retract-components self attribute {}))
-;;   ([self attribute options] "..."))
+(defn retract-components
+  ([self attribute options]
+   "..."))
