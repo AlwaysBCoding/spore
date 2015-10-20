@@ -78,7 +78,7 @@
      (condp = return
        :ids ids
        :entities (map #(d/entity db %) ids)
-       :records (map #(d/entity db %) ids)))))
+       :records (map #(instance-constructor (.-manifest self) (d/entity db %)) ids)))))
 
 (defn ^:private validate-query-params [self params]
 
