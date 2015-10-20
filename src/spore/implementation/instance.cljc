@@ -111,7 +111,7 @@
 
      (if (= return :tx-data)
        tx-data
-       (let [db-after (:db-after (d/transact connection tx-data))]
+       (let [db-after (:db-after @(d/transact connection tx-data))]
          (condp = return
            :id (.id self)
            :entity (d/entity db-after (.id self))
