@@ -12,8 +12,8 @@
   (serialize [self serializer] [self serializer options])
   (data [self data-fn] [self data-fn options])
 
-  (destroy [self] [self options])
-  (revise [self params] [self params options])
-  (retract-components [self attribute] [self attribute options])
+  (destroy [self] [self options] [self options db-uri])
+  (revise [self params] [self params options] [self params options db-uri])
+  (retract-components [self attribute] [self attribute options] [self attribute options db-uri])
 
 )

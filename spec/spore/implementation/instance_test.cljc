@@ -105,6 +105,55 @@
 
   )
 
+(testing "#destroy"
+  (deftest destroy-retracts-entity
+    (let [player (.create CIPlayer {:firstname "John" :lastname "Wall"} {} db-uri)]
+      (is (= true
+             (.contains (.all CIPlayer {:return :ids} db-uri) (.id player))))
+      (.destroy player {} db-uri)
+      (is (= false
+             (.contains (.all CIPlayer {:return :ids} db-uri) (.id player)))))))
+
+(testing "#revise"
+  (deftest revise-updates-entity-attribute-simple-add
+    (let [player (.create CIPlayer {:firstname "John" :lastname "Wall"} {} db-uri)]
+      (is (= "John"
+             (.attr player :firstname)))
+
+      ;; This is an untestable component in the current workflow, because it's looking at the spore model file again
+      #_(let [player (.revise player {:firstname "Brad" :lastname nil} {} db-uri)]
+          (is (= "Brad"
+                 (.attr player :firstname))))))
+
+  (deftest revise-updates-entity-attribute-simple-retract
+    (let [player (.create CIPlayer {:firstname "John" :lastname "Wall"} {} db-uri)]
+      (is (= "John"
+             (.attr player :firstname)))
+      ;; This is an untestable component in the current workflow, because it's looking at the spore model file again
+      #_(let [player (.revise player {:firstname nil :lastname "Brad"} {} db-uri)]
+        (is (= nil
+               (.attr player :firstname))))))
+
+  (deftest revise-doesnt-let-you-revise-attribute-not-defined-on-the-manifest
+    (let [player (.create CIPlayer {:firstname "John" :lastname "Wall"} {} db-uri)]
+      (try
+        (.revise player {:middlename "Hildred"} {} db-uri)
+        (throw (ex-info "" {:message "No exception thrown in function that is expected to error"}))
+        (catch Exception e
+          (is (= (ex-data e)
+                 {:model :player
+                  :parameter :middlename}))))))
+  
+  (deftest revise-doesnt-let-you-retract-required-attribute
+    (let [player (.create CIPlayer {:firstname "John" :lastname "Wall"} {} db-uri)]
+      (try
+        (.revise player {:lastname nil} {} db-uri)
+        (throw (ex-info "" {:message "No exception thrown in function that is expected to error"}))
+        (catch Exception e
+          (is (= (ex-data e)
+                 {:model :player
+                  :parameter :lastname})))))))
+
 (testing "#display")
 
 (testing "#serialize")

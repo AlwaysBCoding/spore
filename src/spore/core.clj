@@ -28,14 +28,17 @@
      (instance-protocol/attr [self# attribute#] (instance-protocol/attr self# attribute# {}))
      (instance-protocol/attr [self# attribute# options#] (instance-implementation/attr self# attribute# options#))
 
-     (instance-protocol/destroy [self#] "...")
-     (instance-protocol/destroy [self# options#] "...")
+     (instance-protocol/destroy [self#] (instance-protocol/destroy self# {}))
+     (instance-protocol/destroy [self# options#] (instance-protocol/destroy self# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
+     (instance-protocol/destroy [self# options# db-uri#] (instance-implementation/destroy self# options# db-uri#))
 
-     (instance-protocol/revise [self# params#] "...")
-     (instance-protocol/revise [self# params# options#] "...")
+     (instance-protocol/revise [self# params#] (instance-protocol/revise self# params# {}))
+     (instance-protocol/revise [self# params# options#] (instance-protocol/revise self# params# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
+     (instance-protocol/revise [self# params# options# db-uri#] (instance-implementation/revise self# params# options# db-uri#))
 
-     (instance-protocol/retract-components [self# attribute#] "...")
-     (instance-protocol/retract-components [self# attribute# options#] "...")
+     (instance-protocol/retract-components [self# attribute#] (instance-protocol/retract-components self# attribute# {}))
+     (instance-protocol/retract-components [self# attribute# options#] (instance-protocol/retract-components self# attribute# options# (var-get (resolve (symbol "spore.config/default-db-uri")))))
+     (instance-protocol/retract-components [self# attribute# options# db-uri#] (instance-implementation/retract-components self# attribute# options# db-uri#))
 
      
      

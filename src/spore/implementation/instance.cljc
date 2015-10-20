@@ -1,5 +1,7 @@
 (ns spore.implementation.instance
-  (:require [spore.helpers.resource :as resource-helpers]))
+  (:require [spore.helpers.resource :as resource-helpers]
+            [spore.helpers.util :as util]
+            [datomic.api :as d]))
 
 (defn ident
   ([self]
@@ -69,13 +71,56 @@
 
 
 (defn destroy
-  ([self options]
-   "..."))
+  ([self options db-uri]
+   (let [connection (d/connect db-uri)]
+     (d/transact connection [[:db.fn/retractEntity (.id self)]]))))
+
+(defn ^:private validate-revise-params [self params]
+  (let [required-attributes (->> (first (vals (.-manifest self)))
+                                 (filter (fn [[key value]]
+                                           (util/contains-submap? value {:required true})))
+                                 (map first))]
+    
+    (doseq [[key value] params]
+      (if-not (.contains (keys (first (vals (.-manifest self)))) key)
+        (throw (ex-info
+                "Tried to revise record with a parameter that is not defined on the manifest"
+                {:model (.ident self)
+                 :parameter key})))
+
+      (if (and
+           (.contains required-attributes key)
+           (= value nil))
+        (throw (ex-info
+                "Tried to revise attribute to nil, but the attribute is required by the manifest"
+                {:model (.ident self)
+                 :parameter key}))))))
 
 (defn revise
-  ([self params options]
-   "..."))
+  ([self params {:keys [return] :or {return :record} :as options} db-uri]
+   (validate-revise-params self params)
+   (let [connection (d/connect db-uri)
+         tx-fragment (mapv (fn [[key value]] (if (nil? value)
+                                              (if-let [current-attribute-value (.attr self key)]
+                                                [:db/retract (.id self) key current-attribute-value])
+                                              [:db/add (.id self) key value]))
+                           (reduce-kv (fn [memo key value] (assoc memo (resource-helpers/resource-attribute (.ident self) key) value)) {} params))
+         tx-data (vec (remove nil? tx-fragment))]
+
+     tx-data
+
+     (if (= return :tx-data)
+       tx-data
+       (let [db-after (:db-after (d/transact connection tx-data))]
+         (condp = return
+           :id (.id self)
+           :entity (d/entity db-after (.id self))
+           :record ((resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (.ident self)))
+                                     (str "->" (resource-helpers/ident->namespace (.ident self)))))
+                    (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (.ident self)))
+                                              "manifest")))
+                    (d/entity db-after (.id self)))))))))
 
 (defn retract-components
-  ([self attribute options]
+  ([self attribute options db-uri]
    "..."))
