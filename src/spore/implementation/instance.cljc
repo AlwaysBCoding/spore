@@ -28,7 +28,34 @@
          default-value (-> self
                            (.-entity)
                            (get (resource-helpers/resource-attribute (ident self) attribute)))]
-     default-value)))
+
+     (cond
+
+       (and (= :ref (:type attribute-manifest))
+            (:ref-type attribute-manifest false)
+            (not (= :many (:cardinality attribute-manifest)))
+            (not (empty? default-value)))
+       ((resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
+                         (str "->" (resource-helpers/ident->namespace (:ref-type attribute-manifest)))))
+        (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
+                         "manifest"))
+        default-value)
+
+       (and (= (:ref (:type attribute-manifest)))
+            (:ref-type attribute-manifest false)
+            (= (:many (:cardinality attribute-manifest)))
+            (not (empty? default-value)))
+       (map
+        (fn [entity]
+          ((resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
+                            (str "->" (resource-helpers/ident->namespace (:ref-type attribute-manifest)))))
+           (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
+                            "manifest"))
+           entity))
+        default-value)
+       
+       :else
+       default-value))))
 
 (defn serialize
   ([self serializer options]

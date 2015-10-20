@@ -27,6 +27,17 @@
 
      (instance-protocol/attr [self# attribute#] (instance-protocol/attr self# attribute# {}))
      (instance-protocol/attr [self# attribute# options#] (instance-implementation/attr self# attribute# options#))
+
+     (instance-protocol/destroy [self#] "...")
+     (instance-protocol/destroy [self# options#] "...")
+
+     (instance-protocol/revise [self# params#] "...")
+     (instance-protocol/revise [self# params# options#] "...")
+
+     (instance-protocol/retract-components [self# attribute#] "...")
+     (instance-protocol/retract-components [self# attribute# options#] "...")
+
+     
      
      ~@body))
         
