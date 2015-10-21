@@ -39,3 +39,13 @@
 
   (collection-protocol/top [self] (first records))
   (collection-protocol/top [self n] (->SporeCollection manifest (take n records))))
+
+(defmethod clojure.core/print-method SporeCollection
+  [self ^java.io.Writer writer]
+  (.write writer
+   (str "#<SporeCollection"
+        " "
+        "" (name (.ident self)) ""
+        " "
+        "(" (.format (java.text.NumberFormat/getInstance (java.util.Locale/US)) (bigdec (.total self))) ")"
+        ">")))
