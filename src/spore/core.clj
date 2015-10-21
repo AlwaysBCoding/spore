@@ -9,6 +9,9 @@
 (defmacro SporeInstance [instance-name & body]
   `(defrecord ~instance-name [~'manifest ~'entity]
 
+     Object
+     (toString [self#] (instance-implementation/to-string self#))
+
      instance-protocol/SporeInstanceProtocol
 
      (instance-protocol/ident [self#] (instance-implementation/ident self#))
@@ -54,6 +57,9 @@
 
      (component/stop [self#]
        self#)
+
+     Object
+     (toString [self#] (class-implementation/to-string self#))
      
      class-protocol/SporeClassProtocol
 

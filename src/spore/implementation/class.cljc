@@ -1,7 +1,13 @@
 (ns spore.implementation.class
   (:require [spore.helpers.resource :as resource-helpers]
             [spore.helpers.util :as util]
-            [datomic.api :as d]))
+            [camel-snake-kebab.core :refer :all]
+            [datomic.api :as d]
+            [spore.implementation.collection :refer (->SporeCollection)]))
+
+(defn to-string
+  ([self]
+   (str "#<SporeClass::" (->PascalCase (resource-helpers/ident->namespace (.ident self))) ">")))
 
 (defn ident
   ([self]
@@ -9,7 +15,7 @@
 
 (defn schema
   ([self]
-    (resource-helpers/manifest->schema (.-manifest self))))
+   (resource-helpers/manifest->schema (.-manifest self))))
 
 (defn data
   ([self data-fn options]
@@ -78,7 +84,9 @@
      (condp = return
        :ids ids
        :entities (map #(d/entity db %) ids)
-       :records (map #(instance-constructor (.-manifest self) (d/entity db %)) ids)))))
+       :records (->SporeCollection
+                 (.-manifest self)
+                 (map #(instance-constructor (.-manifest self) (d/entity db %)) ids))))))
 
 (defn ^:private validate-query-params [self params]
 
@@ -107,7 +115,9 @@
      (condp = return
        :ids ids
        :entities (map #(d/entity db %) ids)
-       :records (map #(d/entity db %) ids)))))
+       :records (->SporeCollection
+                 (.-manifest self)
+                 (map #(instance-constructor (.-manifest self) (d/entity db %)) ids))))))
 
 (defn detect
   ([self params {:keys [return instance-constructor] :or {return :record} :as options} db-uri]
@@ -145,7 +155,7 @@
        nil))))
 
 (defn one
-  ([self {:keys [return] :or {return :record} :as options} db-uri]
+  ([self {:keys [return instance-constructor] :or {return :record} :as options} db-uri]
    (let [db (d/db (d/connect db-uri))
          id (d/q '[:find ?eid .
                    :in $ ?attribute
@@ -156,7 +166,7 @@
      (condp = return
        :id id
        :entity (d/entity db id)
-       :record (d/entity db id)))))
+       :record (instance-constructor (.-manifest self) (d/entity db id))))))
 
 (defn detect-or-create
   ([self params {:keys [return] :or {return :record} :as options} db-uri]

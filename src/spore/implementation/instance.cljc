@@ -1,7 +1,13 @@
 (ns spore.implementation.instance
   (:require [spore.helpers.resource :as resource-helpers]
             [spore.helpers.util :as util]
-            [datomic.api :as d]))
+            [camel-snake-kebab.core :refer :all]
+            [datomic.api :as d]
+            [spore.implementation.collection :refer (->SporeCollection)]))
+
+(defn to-string
+  ([self]
+   (str "#<SporeInstance::" (resource-helpers/ident->namespace (.ident self)) ">")))
 
 (defn ident
   ([self]
@@ -47,14 +53,16 @@
             (:ref-type attribute-manifest false)
             (= (:many (:cardinality attribute-manifest)))
             (not (empty? default-value)))
-       (map
-        (fn [entity]
-          ((resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
-                            (str "->" (resource-helpers/ident->namespace (:ref-type attribute-manifest)))))
-           (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
-                                     "manifest")))
-           entity))
-        default-value)
+       (->SporeCollection
+        (.-manifest self)
+        (map
+         (fn [entity]
+           ((resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
+                             (str "->" (resource-helpers/ident->namespace (:ref-type attribute-manifest)))))
+            (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
+                                      "manifest")))
+            entity))
+         default-value))
        
        :else
        default-value))))
