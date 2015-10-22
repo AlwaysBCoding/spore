@@ -47,3 +47,12 @@
                      (reduce into []))]
 
     keyvals))
+
+(defn generate-system [component-graph dependency-graph]
+  (let [spore-component-keyvals (generate-keyvals)
+        spore-dependency-graph (generate-dependency-graph)
+        composite-keyvals (reduce into spore-component-keyvals (vec component-graph))
+        composite-dependency-graph (merge dependency-graph spore-dependency-graph)]
+
+    (-> (apply component/system-map composite-keyvals)
+        (component/system-using composite-dependency-graph))))
