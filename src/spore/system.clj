@@ -21,3 +21,29 @@
                      (reduce into []))]
 
     (generate-system-map keyvals)))
+
+;; Testing
+(defn generate-dependency-graph []
+  (let [model-namespaces (filter (fn [ns] (.startsWith (str (.getName ns)) "spore.model.")) (all-ns))
+        keyvals (->> model-namespaces
+                     (map (fn [model-ns]
+                            (let [exports (var-get (get (ns-publics (.getName model-ns)) 'exports))
+                                  spore-class (:class exports)]
+                              (vector (.ident spore-class) spore-class))))
+                     (reduce into []))]
+
+    (->> (apply array-map keyvals)
+         (map (fn [[key value]]
+                (assoc {} key (.-dependencies value))))
+         (reduce merge {}))))
+
+(defn generate-keyvals []
+  (let [model-namespaces (filter (fn [ns] (.startsWith (str (.getName ns)) "spore.model.")) (all-ns))
+        keyvals (->> model-namespaces
+                     (map (fn [model-ns]
+                            (let [exports (var-get (get (ns-publics (.getName model-ns)) 'exports))
+                                  spore-class (:class exports)]
+                              (vector (.ident spore-class) spore-class))))
+                     (reduce into []))]
+
+    keyvals))
