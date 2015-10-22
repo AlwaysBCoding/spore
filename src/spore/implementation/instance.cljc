@@ -70,13 +70,12 @@
 (defn serialize
   ([self serializer options]
    (let [invokable-serializer (resolve (symbol (str "spore.serializer." (resource-helpers/ident->namespace (.ident self))) (name serializer)))]
-     (invokable-serializer options))))
+     (invokable-serializer self options))))
 
 (defn data
   ([self data-fn options]
    (let [invokable-data-fn (resolve (symbol (str "spore.data." (resource-helpers/ident->namespace (.ident self))) (name data-fn)))]
      (invokable-data-fn options))))
-
 
 (defn destroy
   ([self options db-uri]

@@ -7,7 +7,7 @@
 
   (collection-protocol/ident [self]
     (first (keys manifest)))
-  
+
   (collection-protocol/total [self] (count records))
 
   (collection-protocol/scope [self scope-name] (collection-protocol/scope self scope-name {}))
@@ -20,7 +20,7 @@
          (symbol (str "spore.scope." (resource-helpers/ident->namespace (collection-protocol/ident self))) (name scope-name)))
         %1 options)
       records)))
-  
+
   (collection-protocol/sorter [self sorter-name] (collection-protocol/sorter self sorter-name {}))
   (collection-protocol/sorter
     [self sorter-name {:keys [] :or {} :as options}]
@@ -44,8 +44,8 @@
   [self ^java.io.Writer writer]
   (.write writer
    (str "#<SporeCollection"
-        " "
+        "::"
         "" (name (.ident self)) ""
-        " "
-        "(" (.format (java.text.NumberFormat/getInstance (java.util.Locale/US)) (bigdec (.total self))) ")"
+        "."
+        "" (.format (java.text.NumberFormat/getInstance (java.util.Locale/US)) (bigdec (.total self))) ""
         ">")))
