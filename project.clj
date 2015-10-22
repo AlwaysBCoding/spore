@@ -10,7 +10,8 @@
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [com.datomic/datomic-pro "0.9.5327" :exclusions [org.clojure/clojure ... joda-time]]
                  [camel-snake-kebab "0.3.2"]
-                 [com.stuartsierra/component "0.3.0"]]
+                 [com.stuartsierra/component "0.3.0"]
+                 [bidi "1.21.1"]]
 
   :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo"
                                    :username :env/DATOMIC_USERNAME
