@@ -12,6 +12,15 @@
                           (symbol (str "spore.controller." (resource-helpers/ident->namespace controller)) (name action))
                           options))]
 
-    {:status 200
-     :headers {"Content-Type" "text/plain"}
-     :body (pr-str response-data)}))
+    (condp = response-format
+      :edn {:status 200
+            :headers {"Content-Type" "application/edn"}
+            :body (pr-str response-data)}
+
+      :json {:status 200
+             :headers {"Content-Type" "application/json"}
+             :body (json/generate-string response-data)})
+
+
+
+    ))
