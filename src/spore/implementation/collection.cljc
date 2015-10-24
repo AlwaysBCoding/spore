@@ -44,8 +44,8 @@
   [self ^java.io.Writer writer]
   (.write writer
    (str "#<SporeCollection"
-        "::"
+        " "
         "" (name (.ident self)) ""
-        "."
-        "" (.format (java.text.NumberFormat/getInstance (java.util.Locale/US)) (bigdec (.total self))) ""
+        " "
+        "{ " (.format (java.text.NumberFormat/getInstance (java.util.Locale/US)) (bigdec (.total self))) " }"
         ">")))
