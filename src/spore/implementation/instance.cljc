@@ -106,7 +106,6 @@
 
 (defn revise
   ([self params {:keys [return] :or {return :record} :as options} db-uri]
-   (validate-revise-params self params)
    (let [connection (d/connect db-uri)
          params-to-use (atom params)]
 
@@ -117,6 +116,8 @@
                  "Lifecycle event returned false"
                  {:model (.ident self)
                   :lifecycle-event :before-save}))))
+
+     (validate-revise-params self @params-to-use)
 
      (let [tx-fragment (mapv (fn [[key value]] (if (nil? value)
                                                  (if-let [current-attribute-value (.attr self key)]

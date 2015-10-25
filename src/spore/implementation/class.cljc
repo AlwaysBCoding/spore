@@ -62,10 +62,9 @@
 
 (defn create
   ([self params {:keys [return instance-constructor] :or {return :record} :as options} db-uri]
-   (validate-create-params self params)
    (let [connection (d/connect db-uri)
          params-to-use (atom params)]
-
+     
      (if (satisfies? SporeClassLifecycleProtocol self)
        (if-let [annotated-params (.before-create self params)]
          (reset! params-to-use annotated-params)
@@ -73,6 +72,8 @@
                  "Lifecycle event returned false"
                  {:model (.ident self)
                   :lifecycle-event :before-create}))))
+
+     (validate-create-params self @params-to-use)
 
      (let [tx-record (.build self @params-to-use)
            tx-data (vector tx-record)
