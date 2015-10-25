@@ -64,19 +64,21 @@
   ([self params {:keys [return instance-constructor] :or {return :record} :as options} db-uri]
    (validate-create-params self params)
    (let [connection (d/connect db-uri)
-         tx-record (.build self params)
-         tx-data (vector tx-record)]
+         params-to-use (atom params)]
 
      (if (satisfies? SporeClassLifecycleProtocol self)
-       (if-not (.before-create self params)
+       (if-let [annotated-params (.before-create self params)]
+         (reset! params-to-use annotated-params)
          (throw (ex-info
                  "Lifecycle event returned false"
                  {:model (.ident self)
                   :lifecycle-event :before-create}))))
 
-     (let [tx-result @(d/transact connection tx-data)
+     (let [tx-record (.build self @params-to-use)
+           tx-data (vector tx-record)
+           tx-result @(d/transact connection tx-data)
            record (d/entity (:db-after tx-result) (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) (:db/id tx-record)))]
-
+       
        (if (satisfies? SporeClassLifecycleProtocol self)
          (if-not (.after-create self tx-result)
            (throw (ex-info

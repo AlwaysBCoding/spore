@@ -108,39 +108,42 @@
   ([self params {:keys [return] :or {return :record} :as options} db-uri]
    (validate-revise-params self params)
    (let [connection (d/connect db-uri)
-         tx-fragment (mapv (fn [[key value]] (if (nil? value)
-                                              (if-let [current-attribute-value (.attr self key)]
-                                                [:db/retract (.id self) key current-attribute-value])
-                                              [:db/add (.id self) key value]))
-                           (reduce-kv (fn [memo key value] (assoc memo (resource-helpers/resource-attribute (.ident self) key) value)) {} params))
-         tx-data (vec (remove nil? tx-fragment))]
+         params-to-use (atom params)]
 
      (if (satisfies? SporeInstanceLifecycleProtocol self)
-       (if-not (.before-save self params)
+       (if-let [annotated-params (.before-save self params)]
+         (reset! params-to-use annotated-params)
          (throw (ex-info
                  "Lifecycle event returned false"
                  {:model (.ident self)
                   :lifecycle-event :before-save}))))
 
-     (if (= return :tx-data)
-       tx-data
-       (let [tx-result @(d/transact connection tx-data)]
+     (let [tx-fragment (mapv (fn [[key value]] (if (nil? value)
+                                                 (if-let [current-attribute-value (.attr self key)]
+                                                   [:db/retract (.id self) key current-attribute-value])
+                                                 [:db/add (.id self) key value]))
+                             (reduce-kv (fn [memo key value] (assoc memo (resource-helpers/resource-attribute (.ident self) key) value)) {} @params-to-use))
+           tx-data (vec (remove nil? tx-fragment))]
+       
+       (if (= return :tx-data)
+         tx-data
+         (let [tx-result @(d/transact connection tx-data)]
 
-         (if (satisfies? SporeInstanceLifecycleProtocol self)
-           (if-not (.after-save self tx-result)
-             (throw (ex-info
-                     "Lifecycle event returned false"
-                     {:model (.ident self)
-                      :lifecycle-event :after-save}))))
+           (if (satisfies? SporeInstanceLifecycleProtocol self)
+             (if-not (.after-save self tx-result)
+               (throw (ex-info
+                       "Lifecycle event returned false"
+                       {:model (.ident self)
+                        :lifecycle-event :after-save}))))
 
-         (condp = return
-           :id (.id self)
-           :entity (d/entity (:db-after tx-result) (.id self))
-           :record ((resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (.ident self)))
-                                     (str "->" (resource-helpers/ident->namespace (.ident self)))))
-                    (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (.ident self)))
-                                              "manifest")))
-                    (d/entity (:db-after tx-result) (.id self)))))))))
+           (condp = return
+             :id (.id self)
+             :entity (d/entity (:db-after tx-result) (.id self))
+             :record ((resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (.ident self)))
+                                       (str "->" (resource-helpers/ident->namespace (.ident self)))))
+                      (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (.ident self)))
+                                                "manifest")))
+                      (d/entity (:db-after tx-result) (.id self))))))))))
 
 (defn retract-components
   ([self attribute options db-uri]
