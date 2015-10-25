@@ -61,7 +61,7 @@
                  :parameter key}))))))
 
 (defn create
-  ([self params {:keys [return instance-constructor] :or {return :record} :as options} db-uri]
+  ([self params {:keys [return] :or {return :record} :as options} db-uri]
    (let [connection (d/connect db-uri)
          params-to-use (atom params)]
      
@@ -79,7 +79,7 @@
            tx-data (vector tx-record)
            tx-result @(d/transact connection tx-data)
            entity (d/entity (:db-after tx-result) (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) (:db/id tx-record)))
-           record (instance-constructor (.-manifest self) entity)]
+           record (.construct-instance self entity)]
        
        (if (satisfies? SporeClassLifecycleProtocol self)
          (if-not (.after-create self record tx-result)
@@ -94,7 +94,7 @@
          :record record)))))
 
 (defn all
-  ([self {:keys [return instance-constructor] :or {return :records} :as options} db-uri]
+  ([self {:keys [return] :or {return :records} :as options} db-uri]
    (let [db (d/db (d/connect db-uri))
          ids (d/q '[:find [?eid ...]
                     :in $ ?attribute
@@ -106,7 +106,7 @@
        :entities (map #(d/entity db %) ids)
        :records (->SporeCollection
                  (.-manifest self)
-                 (map #(instance-constructor (.-manifest self) (d/entity db %)) ids))))))
+                 (map #(.construct-instance self (d/entity db %)) ids))))))
 
 (defn ^:private validate-query-params [self params]
 
@@ -118,7 +118,7 @@
                :parameter key})))))
 
 (defn where
-  ([self params {:keys [return instance-constructor] :or {return :records} :as options} db-uri]
+  ([self params {:keys [return] :or {return :records} :as options} db-uri]
    (validate-query-params self params)
    (let [db (d/db (d/connect db-uri))
          name-fn (comp symbol (partial str "?") name)
@@ -137,10 +137,10 @@
        :entities (map #(d/entity db %) ids)
        :records (->SporeCollection
                  (.-manifest self)
-                 (map #(instance-constructor (.-manifest self) (d/entity db %)) ids))))))
+                 (map #(.construct-instance self (d/entity db %)) ids))))))
 
 (defn detect
-  ([self params {:keys [return instance-constructor] :or {return :record} :as options} db-uri]
+  ([self params {:keys [return] :or {return :record} :as options} db-uri]
    (validate-query-params self params)
    (let [db (d/db (d/connect db-uri))
          name-fn (comp symbol (partial str "?") name)
@@ -153,29 +153,29 @@
                               [:in] in-clause
                               [:where] where-clause)
          id (apply d/q final-clause db param-vals)
-         record (d/entity db id)]
+         entity (d/entity db id)]
 
-     (if record
+     (if entity
        (condp = return
          :id id
-         :entity record
-         :record (instance-constructor (.-manifest self) record))
+         :entity entity
+         :record (.construct-instance self entity))
        nil))))
 
 (defn lookup
-  ([self id {:keys [return instance-constructor] :or {return :record} :as options} db-uri]
+  ([self id {:keys [return] :or {return :record} :as options} db-uri]
    (let [db (d/db (d/connect db-uri))
-         record (d/entity db id)]
+         entity (d/entity db id)]
 
-     (if (not (empty? (into [] record)))
+     (if (not (empty? (into [] entity)))
        (condp = return
          :id id
-         :entity record
-         :record (instance-constructor (.-manifest self) record))
+         :entity entity
+         :record (.construct-instance self entity))
        nil))))
 
 (defn one
-  ([self {:keys [return instance-constructor] :or {return :record} :as options} db-uri]
+  ([self {:keys [return] :or {return :record} :as options} db-uri]
    (let [db (d/db (d/connect db-uri))
          id (d/q '[:find ?eid .
                    :in $ ?attribute
@@ -186,7 +186,7 @@
      (condp = return
        :id id
        :entity (d/entity db id)
-       :record (instance-constructor (.-manifest self) (d/entity db id))))))
+       :record (.construct-instance self (d/entity db id))))))
 
 (defn detect-or-create
   ([self params {:keys [return] :or {return :record} :as options} db-uri]

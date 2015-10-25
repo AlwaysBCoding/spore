@@ -1,9 +1,9 @@
 (ns spore.implementation.collection
-  (:require [spore.protocol.collection :as collection-protocol]
+  (:require [spore.protocol.internal.collection :as collection-protocol]
             [spore.helpers.resource :as resource-helpers]))
 
 (defrecord SporeCollection [manifest records]
-  collection-protocol/SporeCollectionProtocol
+  collection-protocol/SporeInternalCollectionProtocol
 
   (collection-protocol/ident [self]
     (first (keys manifest)))

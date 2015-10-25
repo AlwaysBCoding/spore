@@ -1,12 +1,12 @@
-(ns spore.protocol.instance)
+(ns spore.protocol.internal.instance)
 
-(defprotocol SporeInstanceProtocol
+(defprotocol SporeInternalInstanceProtocol
   ""
   (ident [self])
-  
+
   (id [self] [self options])
   (display [self] [self options])
-  
+
   (attr [self attribute] [self attribute options])
 
   (serialize [self serializer] [self serializer options])

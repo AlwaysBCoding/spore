@@ -1,6 +1,6 @@
-(ns spore.protocol.collection)
+(ns spore.protocol.internal.collection)
 
-(defprotocol SporeCollectionProtocol
+(defprotocol SporeInternalCollectionProtocol
   ""
   (ident [self])
   (total [self])

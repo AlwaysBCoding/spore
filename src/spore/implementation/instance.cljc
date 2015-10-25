@@ -90,7 +90,7 @@
                   :lifecycle-event :before-destroy}))))
      
      (let [tx-result @(d/transact connection [[:db.fn/retractEntity (.id self)]])]
-
+       
        (if (satisfies? SporeInstanceLifecycleProtocol self)
          (if-not (.after-destroy self tx-result)
            (throw (ex-info
