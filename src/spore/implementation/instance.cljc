@@ -81,7 +81,24 @@
 (defn destroy
   ([self options db-uri]
    (let [connection (d/connect db-uri)]
-     (d/transact connection [[:db.fn/retractEntity (.id self)]]))))
+
+     (if (satisfies? SporeInstanceLifecycleProtocol self)
+       (if-not (.before-destroy self)
+         (throw (ex-info
+                 "Lifecycle event returned false"
+                 {:model (.ident self)
+                  :lifecycle-event :before-destroy}))))
+     
+     (let [tx-result @(d/transact connection [[:db.fn/retractEntity (.id self)]])]
+
+       (if (satisfies? SporeInstanceLifecycleProtocol self)
+         (if-not (.after-destroy self tx-result)
+           (throw (ex-info
+                   "Lifecycle event returned false"
+                   {:model (.ident self)
+                    :lifecycle-event :after-destroy}))))
+
+       tx-result))))
 
 (defn ^:private validate-revise-params [self params]
   (let [required-attributes (->> (first (vals (.-manifest self)))
