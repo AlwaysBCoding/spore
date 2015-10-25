@@ -78,19 +78,20 @@
      (let [tx-record (.build self @params-to-use)
            tx-data (vector tx-record)
            tx-result @(d/transact connection tx-data)
-           record (d/entity (:db-after tx-result) (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) (:db/id tx-record)))]
+           entity (d/entity (:db-after tx-result) (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) (:db/id tx-record)))
+           record (instance-constructor (.-manifest self) entity)]
        
        (if (satisfies? SporeClassLifecycleProtocol self)
-         (if-not (.after-create self tx-result)
+         (if-not (.after-create self record tx-result)
            (throw (ex-info
                    "Lifecycle event returned false"
                    {:model (.ident self)
                     :lifecycle-event :after-create}))))
        
        (condp = return
-         :id (:db/id record)
-         :entity record
-         :record (instance-constructor (.-manifest self) record))))))
+         :id (:db/id entity)
+         :entity entity
+         :record record)))))
 
 (defn all
   ([self {:keys [return instance-constructor] :or {return :records} :as options} db-uri]

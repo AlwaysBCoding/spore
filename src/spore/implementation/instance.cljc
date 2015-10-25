@@ -128,10 +128,16 @@
        
        (if (= return :tx-data)
          tx-data
-         (let [tx-result @(d/transact connection tx-data)]
-
+         (let [tx-result @(d/transact connection tx-data)
+               entity (d/entity (:db-after tx-result) (.id self))
+               record ((resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (.ident self)))
+                                        (str "->" (resource-helpers/ident->namespace (.ident self)))))
+                       (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (.ident self)))
+                                                 "manifest")))
+                       entity)]
+           
            (if (satisfies? SporeInstanceLifecycleProtocol self)
-             (if-not (.after-save self tx-result)
+             (if-not (.after-save self record tx-result)
                (throw (ex-info
                        "Lifecycle event returned false"
                        {:model (.ident self)
@@ -139,12 +145,8 @@
 
            (condp = return
              :id (.id self)
-             :entity (d/entity (:db-after tx-result) (.id self))
-             :record ((resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (.ident self)))
-                                       (str "->" (resource-helpers/ident->namespace (.ident self)))))
-                      (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (.ident self)))
-                                                "manifest")))
-                      (d/entity (:db-after tx-result) (.id self))))))))))
+             :entity entity
+             :record record)))))))
 
 (defn retract-components
   ([self attribute options db-uri]
