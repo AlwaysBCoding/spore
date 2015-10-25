@@ -3,9 +3,9 @@
 (defprotocol SporeInstanceLifecycleProtocol
   ""
   (before-save [self params])
-  (after-save [self tx-result]))
+  (after-save [self record tx-result]))
 
 (defprotocol SporeClassLifecycleProtocol
   ""
   (before-create [self params])
-  (after-create [self tx-result]))
+  (after-create [self record tx-result]))
