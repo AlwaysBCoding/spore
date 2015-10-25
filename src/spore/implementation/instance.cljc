@@ -3,6 +3,7 @@
             [spore.helpers.util :as util]
             [camel-snake-kebab.core :refer :all]
             [datomic.api :as d]
+            [spore.protocol.lifecycle :refer (SporeInstanceLifecycleProtocol)]
             [spore.implementation.collection :refer (->SporeCollection)]))
 
 (defn to-string
@@ -114,19 +115,32 @@
                            (reduce-kv (fn [memo key value] (assoc memo (resource-helpers/resource-attribute (.ident self) key) value)) {} params))
          tx-data (vec (remove nil? tx-fragment))]
 
-     tx-data
+     (if (satisfies? SporeInstanceLifecycleProtocol self)
+       (if-not (.before-save self params)
+         (throw (ex-info
+                 "Lifecycle event returned false"
+                 {:model (.ident self)
+                  :lifecycle-event :before-save}))))
 
      (if (= return :tx-data)
        tx-data
-       (let [db-after (:db-after @(d/transact connection tx-data))]
+       (let [tx-result @(d/transact connection tx-data)]
+
+         (if (satisfies? SporeInstanceLifecycleProtocol self)
+           (if-not (.after-save self tx-result)
+             (throw (ex-info
+                     "Lifecycle event returned false"
+                     {:model (.ident self)
+                      :lifecycle-event :after-save}))))
+
          (condp = return
            :id (.id self)
-           :entity (d/entity db-after (.id self))
+           :entity (d/entity (:db-after tx-result) (.id self))
            :record ((resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (.ident self)))
                                      (str "->" (resource-helpers/ident->namespace (.ident self)))))
                     (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (.ident self)))
                                               "manifest")))
-                    (d/entity db-after (.id self)))))))))
+                    (d/entity (:db-after tx-result) (.id self)))))))))
 
 (defn retract-components
   ([self attribute options db-uri]
