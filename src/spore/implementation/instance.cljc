@@ -48,7 +48,8 @@
                          (str "->" (resource-helpers/ident->namespace (:ref-type attribute-manifest)))))
         (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
                                   "manifest")))
-        default-value)
+        default-value
+        {})
 
        (and (= (:ref (:type attribute-manifest)))
             (:ref-type attribute-manifest false)
@@ -62,9 +63,9 @@
                              (str "->" (resource-helpers/ident->namespace (:ref-type attribute-manifest)))))
             (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
                                       "manifest")))
-            entity))
+            entity {}))
          default-value))
-       
+
        :else
        default-value))))
 
@@ -88,9 +89,9 @@
                  "Lifecycle event returned false"
                  {:model (.ident self)
                   :lifecycle-event :before-destroy}))))
-     
+
      (let [tx-result @(d/transact connection [[:db.fn/retractEntity (.id self)]])]
-       
+
        (if (satisfies? SporeInstanceLifecycleProtocol self)
          (if-not (.after-destroy self tx-result)
            (throw (ex-info
@@ -105,7 +106,7 @@
                                  (filter (fn [[key value]]
                                            (util/contains-submap? value {:required true})))
                                  (map first))]
-    
+
     (doseq [[key value] params]
       (if-not (.contains (keys (first (vals (.-manifest self)))) key)
         (throw (ex-info
@@ -142,7 +143,7 @@
                                                  [:db/add (.id self) key value]))
                              (reduce-kv (fn [memo key value] (assoc memo (resource-helpers/resource-attribute (.ident self) key) value)) {} @params-to-use))
            tx-data (vec (remove nil? tx-fragment))]
-       
+
        (if (= return :tx-data)
          tx-data
          (let [tx-result @(d/transact connection tx-data)
@@ -151,8 +152,8 @@
                                         (str "->" (resource-helpers/ident->namespace (.ident self)))))
                        (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (.ident self)))
                                                  "manifest")))
-                       entity)]
-           
+                       entity (.-dependencies self))]
+
            (if (satisfies? SporeInstanceLifecycleProtocol self)
              (if-not (.after-save self record tx-result)
                (throw (ex-info
