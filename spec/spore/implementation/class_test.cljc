@@ -2,6 +2,7 @@
   (:require [clojure.test :refer :all]
             [spec.helpers.matchers :refer :all]
             [spore.core :as spore]
+            [spore.protocol.class :refer (SporeClassProtocol)]
             [spore.protocol.manifest :refer (SporeManifest)]
             [datomic.api :as d]))
 
@@ -20,8 +21,8 @@
 
   (schema [self]
     {:firstname {:type :string}
-     :lastname {:type :string}
-     :jerseyNumber {:type :string}})
+     :lastname {:type :string, :required true}
+     :jerseyNumber {:type :long}})
 
   (relations [self]
     {})
@@ -74,13 +75,32 @@
 (def BasketballGameEvent nil)
 
 ;; Fixtures
+(defn define-spore-instances [test-fn]
+  (spore/SporeInstance cplayer)
+  (spore/SporeInstance cteam)
+  (spore/SporeInstance cbasketball-game-event)
+  (test-fn))
+
 (defn define-spore-classes [test-fn]
-  (spore/SporeClass CPlayer)
+  (spore/SporeClass CPlayer
+   SporeClassProtocol
+   (construct-instance [self entity]
+    (->cplayer (.-manifest self) entity {})))
   (alter-var-root #'Player (fn [data] (->CPlayer (->PlayerManifest) [])))
-  (spore/SporeClass CTeam)
+
+  (spore/SporeClass CTeam
+   SporeClassProtocol
+   (construct-instance [self entity]
+    (->cteam (.-manifest self) entity {})))
   (alter-var-root #'Team (fn [data] (->CTeam (->TeamManifest) [])))
-  (spore/SporeClass CBasketballGameEvent)
+
+  (spore/SporeClass CBasketballGameEvent
+   SporeClassProtocol
+   (construct-instance
+    [self entity]
+    (->cbasketball-game-event (.-manifest self) entity {})))
   (alter-var-root #'BasketballGameEvent (fn [data] (->CBasketballGameEvent (->BasketballGameEventManifest) [])))
+
   (test-fn))
 
 (defn create-database [test-fn]
@@ -88,8 +108,14 @@
   (test-fn)
   (d/delete-database db-uri))
 
-(use-fixtures :once define-spore-classes)
-(use-fixtures :each create-database)
+(defn sync-database-schema [test-fn]
+  (d/transact (d/connect db-uri) (reduce into [] (vector (.schema Player)
+                                                         (.schema Team)
+                                                         (.schema BasketballGameEvent))))
+  (test-fn))
+
+(use-fixtures :once define-spore-instances define-spore-classes)
+(use-fixtures :each create-database sync-database-schema)
 
 ;; Assertions
 (testing "Spore Manifest"
@@ -186,7 +212,7 @@
       (.create Player {:firstname "John" :lastname "Tyler"} {} db-uri)
       (.create Player {:firstname "Bradley" :lastname "Beal"} {} db-uri)
       (is (= 3
-             (count (.where Player {:firstname "John"} {} db-uri)))))
+             (.total (.where Player {:firstname "John"} {} db-uri)))))
     
     (deftest where-returns-all-instances-compound-attribute
       (.create Player {:firstname "John" :lastname "Wall" :jerseyNumber 2} {} db-uri)
@@ -194,7 +220,7 @@
       (.create Player {:firstname "John" :lastname "Tyler" :jerseyNumber 15} {} db-uri)
       (.create Player {:firstname "Bradley" :lastname "Beal" :jerseyNumber 3} {} db-uri)
       (is (= 2
-             (count (.where Player {:firstname "John" :jerseyNumber 2} {} db-uri)))))
+             (.total (.where Player {:firstname "John" :jerseyNumber 2} {} db-uri)))))
 
     (deftest where-raises-error-if-parameter-is-not-in-manifest
       (.create Player {:firstname "John" :lastname "Wall" :jerseyNumber 2} {} db-uri)
@@ -287,50 +313,5 @@
   
   (testing "#data")
   (testing "#query"))
-
-;; (defn sync-database-schema [test-fn]
-;;   (d/transact (d/connect db-uri) (reduce into [] (vector (.schema CRPlayer)
-;;                                                          (.schema CRTeam)
-;;                                                          (.schema CRPlayerGame)
-;;                                                          (.schema CRBasketballGameEvent))))
-;;   (test-fn))
-
-;; (use-fixtures :once define-spore-instances define-spore-classes)
-;; (use-fixtures :each create-database sync-database-schema)
-
-;; (def player-game-manifest
-;;   {:playerGame
-;;    {:player {:type :ref :ref-type :player}
-;;     :game {:type :ref :ref-type :game}
-;;     :statModel {:type :ref}}})
-
-;; (def basketball-game-event-manifest
-;;   {:basketball.gameEvent
-;;    {:game {:type :ref :ref-type :game}
-;;     :display {:type :string}}})
-
-;; (def CRPlayer nil)
-;; (def CRTeam nil)
-;; (def CRPlayerGame nil)
-;; (def CRBasketballGameEvent nil)
-
-;; ;; Fixtures
-;; (defn define-spore-instances [test-fn]
-;;   (spore/SporeInstance cplayer)
-;;   (spore/SporeInstance cteam)
-;;   (spore/SporeInstance cplayer-game)
-;;   (spore/SporeInstance cbasketball-game-event)
-;;   (test-fn))
-
-;; (defn define-spore-classes [test-fn]
-;;   (spore/SporeClass CPlayer)
-;;   (alter-var-root #'CRPlayer (fn [data] (->CPlayer player-manifest #(->cplayer %1 %2) [])))
-;;   (spore/SporeClass CTeam)
-;;   (alter-var-root #'CRTeam (fn [data] (->CTeam team-manifest #(->cteam %1 %2) [])))
-;;   (spore/SporeClass CPlayerGame)
-;;   (alter-var-root #'CRPlayerGame (fn [data] (->CPlayerGame player-game-manifest #(->cplayer-game %1 %2) [])))
-;;   (spore/SporeClass CBasketballGameEvent)
-;;   (alter-var-root #'CRBasketballGameEvent (fn [data] (->CBasketballGameEvent basketball-game-event-manifest #(->cbasketball-game-event %1 %2) [])))
-;;   (test-fn))
 
 ;; ;; Assertions

@@ -42,29 +42,31 @@
       tx-record)))
 
 (defn ^:private validate-create-params [self params]
-  (let [required-attributes (->> (first (vals (.-manifest self)))
+  
+  (let [required-attributes (->> (-> self .-manifest .schema)
                                  (filter (fn [[key value]]
                                            (util/contains-submap? value {:required true})))
                                  (map first))]
-
+    
     (if-not (util/contains-map-keys? params required-attributes)
       (throw (ex-info
               "Not all required attributes defined on the manifest are present in the params"
-              {:model (.ident self)
-               :required-attributes required-attributes})))
+              {:model (-> self .-manifest .inflections :ident)
+               :required-attributes required-attributes}))))
 
-    (doseq [[key value] params]
-      (if-not (.contains (keys (first (vals (.-manifest self)))) key)
-        (throw (ex-info
-                "Tried to build tx-data with a parameter that is not defined on the manifest"
-                {:model (.ident self)
-                 :parameter key}))))))
+  (doseq [[key value] params]
+    (if-not (.contains (keys (-> self .-manifest .schema)) key)
+      (throw (ex-info
+              "Tried to build tx-data with a parameter that is not defined on the manifest"
+              {:model (.ident self)
+               :parameter key})))))
 
 (defn create
   ([self params {:keys [return] :or {return :record} :as options} db-uri]
    (let [connection (d/connect db-uri)
          params-to-use (atom params)]
      
+     ;; BEFORE CREATE     
      (if-let [before-create (-> self .-manifest .lifecycle :before-create)]
        (if-let [annotated-params (before-create self params)]
          (reset! params-to-use annotated-params)
@@ -73,25 +75,31 @@
                  {:model (.ident self)
                   :lifecycle-event :before-create}))))
 
+     ;; VALIDATE PARAMS
      (validate-create-params self @params-to-use)
 
+     ;; CREATE RECORD
      (let [tx-record (.build self @params-to-use)
            tx-data (vector tx-record)
            tx-result @(d/transact connection tx-data)
            entity (d/entity (:db-after tx-result) (d/resolve-tempid (:db-after tx-result) (:tempids tx-result) (:db/id tx-record)))
            record (.construct-instance self entity)]
-       
-       (if (satisfies? SporeClassLifecycleProtocol self)
-         (if-not (.after-create self record tx-result)
+
+       ;; AFTER CREATE
+       (if-let [after-create (-> self .-manifest .lifecycle :after-create)]
+         (if-not (after-create self params)
            (throw (ex-info
                    "Lifecycle event returned false"
                    {:model (.ident self)
                     :lifecycle-event :after-create}))))
        
+       ;; RETURN
        (condp = return
          :id (:db/id entity)
          :entity entity
-         :record record)))))
+         :record record))
+
+     )))
 
 (defn all
   ([self {:keys [return] :or {return :records} :as options} db-uri]
@@ -111,7 +119,7 @@
 (defn ^:private validate-query-params [self params]
 
   (doseq [[key value] params]
-    (if-not (.contains (keys (first (vals (.-manifest self)))) key)
+    (if-not (.contains (keys (-> self .-manifest .schema)) key)
       (throw (ex-info
               "Tried to build a query with a parameter that is not defined on the manifest"
               {:model (.ident self)
@@ -119,7 +127,9 @@
 
 (defn where
   ([self params {:keys [return] :or {return :records} :as options} db-uri]
+
    (validate-query-params self params)
+
    (let [db (d/db (d/connect db-uri))
          name-fn (comp symbol (partial str "?") name)
          param-names (map name-fn (keys params))
@@ -141,7 +151,9 @@
 
 (defn detect
   ([self params {:keys [return] :or {return :record} :as options} db-uri]
+
    (validate-query-params self params)
+
    (let [db (d/db (d/connect db-uri))
          name-fn (comp symbol (partial str "?") name)
          param-names (map name-fn (keys params))
