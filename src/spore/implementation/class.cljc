@@ -8,24 +8,24 @@
 
 (defn to-string
   ([self]
-   (str "#<SporeClass::" (->PascalCase (resource-helpers/ident->namespace (.ident self))) ">")))
+   (str "#<SporeClass::" (->PascalCase (-> self .-manifest .inflections :ident)) ">")))
 
 (defn ident
   ([self]
-    (first (keys (.-manifest self)))))
+    (-> self .-manifest .inflections :ident)))
 
 (defn schema
   ([self]
-   (resource-helpers/manifest->schema (.-manifest self))))
+   (resource-helpers/manifest->schema (assoc {} (-> self .-manifest .inflections :datomic-prefix) (-> self .-manifest .schema)))))
 
 (defn data
   ([self data-fn options]
-   (let [invokable-data-fn (resolve (symbol (str "spore.data." (resource-helpers/ident->namespace (.ident self))) (name data-fn)))]
+   (let [invokable-data-fn (resolve (symbol (str "spore.data." (-> self .-manifest .inflections :namespace)) (name data-fn)))]
       (invokable-data-fn options))))
 
 (defn query
   ([self query-fn options]
-   (let [invokable-query-fn (resolve (symbol (str "spore.query." (resource-helpers/ident->namespace (.ident self))) (name query-fn)))]
+   (let [invokable-query-fn (resolve (symbol (str "spore.query." (-> self .-manifest .inflections :namespace)) (name query-fn)))]
       (invokable-query-fn options))))
 
 (defn build
@@ -65,8 +65,8 @@
    (let [connection (d/connect db-uri)
          params-to-use (atom params)]
      
-     (if (satisfies? SporeClassLifecycleProtocol self)
-       (if-let [annotated-params (.before-create self params)]
+     (if-let [before-create (-> self .-manifest .lifecycle :before-create)]
+       (if-let [annotated-params (before-create self params)]
          (reset! params-to-use annotated-params)
          (throw (ex-info
                  "Lifecycle event returned false"
