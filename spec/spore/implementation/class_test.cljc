@@ -294,10 +294,10 @@
       (.create Player {:firstname "John" :lastname "Wall"} {} db-uri)
       (.create Player {:firstname "Bradley" :lastname "Beal"} {} db-uri)
       (is (= 2
-             (count (.all Player {} db-uri))))
+             (.total (.all Player {} db-uri))))
       (.destroy-all Player {} db-uri)
       (is (= 0
-             (count (.all Player {} db-uri))))))
+             (.total (.all Player {} db-uri))))))
   
   (testing "#destroy-where"
     (deftest destroy-where-destroys-properly
@@ -305,10 +305,10 @@
       (.create Player {:firstname "John" :lastname "Tyler"} {} db-uri)
       (.create Player {:firstname "Bradley" :lastname "Beal"} {} db-uri)
       (is (= 3
-             (count (.all Player {} db-uri))))
+             (.total (.all Player {} db-uri))))
       (.destroy-where Player {:firstname "John"} {} db-uri)
       (is (= 1
-             (count (.all Player {} db-uri))))))
+             (.total (.all Player {} db-uri))))))
   
   
   (testing "#data")
