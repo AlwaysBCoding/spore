@@ -49,9 +49,29 @@
   (lifecycle [self]
     {}))
 
+(defrecord BasketballGameEventManifest []
+  SporeManifest
+
+  (inflections [self]
+    {:ident :basketball-game-event
+     :namespace :basketball-game-event
+     :plural :basketball-game-events
+     :datomic-prefix :basketball.gameEvent})
+
+  (schema [self]
+    {:game {:type :ref, :ref-type :game}
+     :display {:type :string}})
+
+  (relations [self]
+    {})
+
+  (lifecycle [self]
+    {}))
+
 ;; Dynamic Vars
 (def Player nil)
 (def Team nil)
+(def BasketballGameEvent nil)
 
 ;; Fixtures
 (defn define-spore-classes [test-fn]
@@ -59,6 +79,8 @@
   (alter-var-root #'Player (fn [data] (->CPlayer (->PlayerManifest) [])))
   (spore/SporeClass CTeam)
   (alter-var-root #'Team (fn [data] (->CTeam (->TeamManifest) [])))
+  (spore/SporeClass CBasketballGameEvent)
+  (alter-var-root #'BasketballGameEvent (fn [data] (->CBasketballGameEvent (->BasketballGameEventManifest) [])))
   (test-fn))
 
 (defn create-database [test-fn]
@@ -73,13 +95,26 @@
 (testing "Spore Manifest"
   (testing "inflections"
     (deftest ident-returns-ident-single-word
-      (is (= (.ident Player) :player))))
+      (is (= (.ident Player) :player)))
+
+    (deftest ident-returns-hyphenated-word
+      (is (= (.ident BasketballGameEvent) :basketball-game-event)))
+
+    (deftest can-access-datomic-prefix
+      (is (= :basketball.gameEvent (-> BasketballGameEvent .-manifest .inflections :datomic-prefix)))))
   
   (testing "schema"
     (deftest schema-adds-spore-id-to-schema
       (is (= 1
              (->> (.schema Player)
                   (filter #(contains-submap? % {:db/ident :player/sporeID
+                                                :db/valueType :db.type/uuid
+                                                :db/unique :db.unique/identity}))
+                  (count))))
+
+      (is (= 1
+             (->> (.schema BasketballGameEvent)
+                  (filter #(contains-submap? % {:db/ident :basketball.gameEvent/sporeID
                                                 :db/valueType :db.type/uuid
                                                 :db/unique :db.unique/identity}))
                   (count)))))))
@@ -94,7 +129,16 @@
                                           :player/lastname "Wall"})))
         
         (is (= true
-               (contains-map-keys? tx-data [:player/sporeID]))))))
+               (contains-map-keys? tx-data [:player/sporeID])))))
+
+    (deftest build-builds-record-against-datomic-prefix
+      (let [tx-data (.build BasketballGameEvent {:display "Some Event"})]
+
+        (is (= true
+               (contains-submap? tx-data {:basketball.gameEvent/display "Some Event"})))
+
+        (is (= true
+               (contains-map-keys? tx-data [:basketball.gameEvent/sporeID]))))))
   
   (testing "#create"
     (deftest create-transacts-record

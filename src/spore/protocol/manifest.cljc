@@ -3,25 +3,25 @@
 (defprotocol SporeManifest
   ""
   (inflections [self]
-    ;; ident
-    ;; namespace
-    ;; plural
-    ;; datomic-prefix
+    #_{:ident :...
+       :namespace :...
+       :plural :...
+       :datomic-prefix :...}
     )
 
   (schema [self]
-    ;; schema
+    #_{}
   )
 
   (relations [self]
-    ;; has-many
+    #_{:has-many :...}
   )
 
   (lifecycle [self]
-    ;; before-save
-    ;; after-save
-    ;; before-create
-    ;; after-create
-    ;; before-destroy
-    ;; after-destroy
+    #_{:before-save :...
+       :after-save :...
+       :before-create :...
+       :after-create :...
+       :before-destroy :...
+       :after-destroy :...}
   ))

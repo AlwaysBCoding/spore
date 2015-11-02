@@ -33,11 +33,11 @@
     (let [tempid (d/tempid :db.part/user)
           tx-fragment (reduce-kv
                        (fn [memo key value]
-                         (assoc memo (resource-helpers/resource-attribute (.ident self) key) value))
+                         (assoc memo (keyword (str (name (-> self .-manifest .inflections :datomic-prefix)) "/" (name key))) value))
                        {} params)
           tx-record (merge
                      {:db/id tempid
-                      (resource-helpers/resource-attribute (.ident self) :sporeID) (d/squuid)}
+                      (keyword (str (name (-> self .-manifest .inflections :datomic-prefix)) "/" "sporeID")) (d/squuid)}
                      tx-fragment)]
       tx-record)))
 
