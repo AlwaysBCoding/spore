@@ -134,7 +134,7 @@
          name-fn (comp symbol (partial str "?") name)
          param-names (map name-fn (keys params))
          param-vals (vals params)
-         attribute-names (map #(resource-helpers/resource-attribute (.ident self) %) (keys params))
+         attribute-names (map #(resource-helpers/resource-attribute (-> self .-manifest .inflections :datomic-prefix) %) (keys params))
          where-clause (map #(vector '?eid %1 %2) attribute-names param-names)
          in-clause (conj param-names '$)
          final-clause (concat [:find '[?eid ...]]
@@ -158,7 +158,7 @@
          name-fn (comp symbol (partial str "?") name)
          param-names (map name-fn (keys params))
          param-vals (vals params)
-         attribute-names (map #(resource-helpers/resource-attribute (.ident self) %) (keys params))
+         attribute-names (map #(resource-helpers/resource-attribute (-> self .-manifest .inflections :datomic-prefix) %) (keys params))
          where-clause (map #(vector '?eid %1 %2) attribute-names param-names)
          in-clause (conj param-names '$)
          final-clause (concat [:find '?eid '.]
