@@ -31,13 +31,11 @@
 ;; TODO resolve entities on attr function calls
 (defn attr
   ([self attribute {:keys [] :or {} :as options}]
-   (let [attribute-manifest (-> self
-                                (.-manifest)
-                                (get (ident self))
+   (let [attribute-manifest (-> (-> self .-manifest .schema)
                                 (get attribute))
          default-value (-> self
                            (.-entity)
-                           (get (resource-helpers/resource-attribute (ident self) attribute)))]
+                           (get (resource-helpers/resource-attribute (-> self .-manifest .inflections :datomic-prefix) attribute)))]
 
      (cond
 
