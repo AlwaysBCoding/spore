@@ -6,7 +6,7 @@
   collection-protocol/SporeInternalCollectionProtocol
 
   (collection-protocol/ident [self]
-    (first (keys manifest)))
+    (-> manifest .inflections :ident))
 
   (collection-protocol/total [self] (count records))
 
@@ -17,7 +17,7 @@
      manifest
      (filter
       #((resolve
-         (symbol (str "spore.scope." (resource-helpers/ident->namespace (collection-protocol/ident self))) (name scope-name)))
+         (symbol (str "spore.scope." (name (-> manifest .inflections :namespace))) (name scope-name)))
         %1 options)
       records)))
 
@@ -28,7 +28,7 @@
      manifest
      (sort
       ((resolve
-        (symbol (str "spore.sorter." (resource-helpers/ident->namespace (collection-protocol/ident self))) (name sorter-name)))
+        (symbol (str "spore.sorter." (name (-> manifest .inflections :namespace))) (name sorter-name)))
        options)
       records)))
 
