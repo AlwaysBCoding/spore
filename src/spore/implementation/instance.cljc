@@ -28,6 +28,7 @@
   ([self {:keys [] :or {} :as options}]
    (into [] (.-entity self))))
 
+;; TODO resolve entities on attr function calls
 (defn attr
   ([self attribute {:keys [] :or {} :as options}]
    (let [attribute-manifest (-> self
@@ -44,12 +45,10 @@
             (:ref-type attribute-manifest false)
             (not (= :many (:cardinality attribute-manifest)))
             (not (empty? default-value)))
-       ((resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
-                         (str "->" (resource-helpers/ident->namespace (:ref-type attribute-manifest)))))
-        (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
-                                  "manifest")))
-        default-value
-        {})
+
+       (.construct-instance
+        (:class (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest))) "exports"))))
+        default-value)
 
        (and (= (:ref (:type attribute-manifest)))
             (:ref-type attribute-manifest false)
@@ -59,11 +58,9 @@
         (.-manifest self)
         (map
          (fn [entity]
-           ((resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
-                             (str "->" (resource-helpers/ident->namespace (:ref-type attribute-manifest)))))
-            (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest)))
-                                      "manifest")))
-            entity {}))
+           (.construct-instance
+            (:class (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest))) "exports"))))
+            entity))
          default-value))
 
        :else
@@ -100,7 +97,7 @@
            (throw (ex-info
                  "Lifecycle event returned false"
                  {:model (.ident self)
-                  :lifecycle-event :after-destroy}))))
+                  :lifecycle-event :after-destroy}))))       
 
        ;; RETURN
        tx-result))))
