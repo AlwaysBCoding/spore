@@ -72,7 +72,7 @@
 (defn data
   ([self data-fn options]
    (let [invokable-data-fn (resolve (symbol (str "spore.data." (name (-> self .-manifest .inflections :namespace))) (name data-fn)))]
-     (invokable-data-fn options))))
+     (invokable-data-fn self options))))
 
 (defn destroy
   ([self options db-uri]
