@@ -18,6 +18,7 @@
 
                  ;; Web Requests
                  [bidi "1.21.1"]
+                 [clj-http "2.0.0"]
                  [cheshire "5.5.0"]]
 
   :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo"
