@@ -151,7 +151,7 @@
          (let [tx-result @(d/transact connection tx-data)
                entity (d/entity (:db-after tx-result) (.id self))
                record (.construct-instance
-                       (:class (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest))) "exports"))))
+                       (:class (var-get (resolve (symbol (str "spore.model." (name (-> self .-manifest .inflections :namespace))) "exports"))))
                        entity)]
            
            ;; AFTER SAVE
