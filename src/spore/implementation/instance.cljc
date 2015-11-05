@@ -150,11 +150,9 @@
          tx-data
          (let [tx-result @(d/transact connection tx-data)
                entity (d/entity (:db-after tx-result) (.id self))
-               record ((resolve (symbol (str "spore.model." (-> self .-manifest .inflections :namespace))
-                                        (str "->" (resource-helpers/ident->namespace (.ident self)))))
-                       (var-get (resolve (symbol (str "spore.model." (-> self .-manifest .inflections :namespace))
-                                                 "manifest")))
-                       entity (.-dependencies self))]
+               record (.construct-instance
+                       (:class (var-get (resolve (symbol (str "spore.model." (resource-helpers/ident->namespace (:ref-type attribute-manifest))) "exports"))))
+                       entity)]
            
            ;; AFTER SAVE
            (if-let [after-save (-> self .-manifest .lifecycle :after-save)]
