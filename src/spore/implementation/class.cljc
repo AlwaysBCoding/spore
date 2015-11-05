@@ -108,7 +108,7 @@
                     :in $ ?attribute
                     :where
                     [?eid ?attribute ?sporeID]]
-                  db (resource-helpers/resource-attribute (.ident self)))]
+                  db (keyword (str (name (-> self .-manifest .inflections :datomic-prefix)) "/" (name :sporeID))))]
      (condp = return
        :ids ids
        :entities (map #(d/entity db %) ids)
@@ -134,7 +134,7 @@
          name-fn (comp symbol (partial str "?") name)
          param-names (map name-fn (keys params))
          param-vals (vals params)
-         attribute-names (map #(resource-helpers/resource-attribute (-> self .-manifest .inflections :datomic-prefix) %) (keys params))
+         attribute-names (map #(keyword (str (name (-> self .-manifest .inflections :datomic-prefix)) "/" (name %))) (keys params))
          where-clause (map #(vector '?eid %1 %2) attribute-names param-names)
          in-clause (conj param-names '$)
          final-clause (concat [:find '[?eid ...]]
@@ -158,7 +158,7 @@
          name-fn (comp symbol (partial str "?") name)
          param-names (map name-fn (keys params))
          param-vals (vals params)
-         attribute-names (map #(resource-helpers/resource-attribute (-> self .-manifest .inflections :datomic-prefix) %) (keys params))
+         attribute-names (map #(keyword (str (name (-> self .-manifest .inflections :datomic-prefix)) "/" (name %))) (keys params))
          where-clause (map #(vector '?eid %1 %2) attribute-names param-names)
          in-clause (conj param-names '$)
          final-clause (concat [:find '?eid '.]
